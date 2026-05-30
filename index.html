@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Günlük Takip Paneli</title>
+  
+  <!-- Calming Fonts: Outfit for clean, friendly, soft headers; Inter for crisp, readable body text -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Decorative Header with soft greeting -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="header-branding">
+        <h1 id="app-title">Günlük Takip Paneli</h1>
+        <p id="app-subtitle" class="text-muted">Planlanmış randevular, günlük işlemler ve genel takip günlüğü</p>
+      </div>
+      <a href="#admin" id="admin-link-gear" class="admin-gear" aria-label="Yönetim Paneline Git" title="Yönetici Ayarları">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </a>
+    </div>
+  </header>
+
+  <!-- VIEW 1: Main Care Dashboard (Visible by default) -->
+  <main id="view-dashboard" class="app-view active" aria-labelledby="app-title">
+    
+    <!-- Encouragement Box / Custom Note from Partner/Son -->
+    <section id="daily-card" class="glass-card hero-card" aria-label="Günün mesajı">
+      <div class="hero-card-pattern"></div>
+      <div class="hero-card-content">
+        <span class="badge badge-warm">Günün Notu</span>
+        <p id="daily-message-text" class="hero-message">Mesaj yükleniyor...</p>
+      </div>
+    </section>
+
+    <div class="dashboard-grid">
+      <!-- Left Column: Upcoming Treatment Schedule & Care Timeline -->
+      <section class="dashboard-column" aria-label="Randevular & Program">
+        <div class="section-header">
+          <h2>Program & Randevu Akışı</h2>
+          <span class="badge" id="appointment-count">yükleniyor...</span>
+        </div>
+        
+        <!-- Timeline wrapper -->
+        <div id="care-timeline" class="timeline-container" role="list">
+          <!-- Timeline items will be rendered dynamically by JavaScript -->
+          <div class="loading-state">
+            <span class="spinner"></span>
+            <p>Program yükleniyor...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Medication Checklist & Emergency Contacts -->
+      <aside class="dashboard-column" aria-label="Günlük Takip & İletişim">
+        
+        <!-- Daily Medications checklist -->
+        <div class="glass-card medication-card">
+          <div class="card-header">
+            <h3>Günlük İlaçlar</h3>
+            <button id="reset-meds" class="btn-text" title="Tüm işaretleri sıfırla">İşaretleri Sıfırla</button>
+          </div>
+          <p class="card-subtitle text-muted">Bugün aldığınız ilaçları buradan işaretleyebilirsiniz:</p>
+          
+          <div id="medication-list" class="med-list" role="group" aria-label="İlaç kontrol listesi">
+            <!-- Rendered dynamically -->
+            <div class="loading-state">
+              <span class="spinner"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hotlines / Care Circle Contacts -->
+        <div class="glass-card contacts-card">
+          <h3>Önemli Telefonlar</h3>
+          <p class="card-subtitle text-muted">Aramak istediğiniz numaranın üzerine dokunmanız yeterlidir:</p>
+          
+          <div id="contacts-list" class="contacts-grid">
+            <!-- Rendered dynamically -->
+            <div class="loading-state">
+              <span class="spinner"></span>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </main>
+
+  <!-- VIEW 2: Admin Dashboard (Accessed via #admin) -->
+  <main id="view-admin" class="app-view" style="display: none;" aria-label="Yönetici Paneli">
+    <div class="admin-container">
+      <div class="admin-header">
+        <a href="#" class="btn-back" aria-label="Panele geri dön">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Panele Geri Dön
+        </a>
+        <h2>Programı ve Takvimi Güncelle</h2>
+        <p class="text-muted">Yeni randevu ve işlemler ekleyin, ilaç listesini veya günlük notu düzenleyin.</p>
+      </div>
+
+      <!-- Authentication Box: Displays when Personal Access Token is missing -->
+      <section id="admin-auth" class="glass-card auth-card">
+        <h3>GitHub Bağlantı Kurulumu</h3>
+        <p class="auth-desc">Panele telefonunuzdan güvenli şekilde veri kaydetmek için bir defalık GitHub Erişim Anahtarınızı (PAT) girin. Bu anahtar <strong>sadece kendi cihazınızda</strong> saklanır.</p>
+        
+        <form id="auth-form" class="form-group">
+          <label for="gh-token">Kişisel Erişim Anahtarı (PAT):</label>
+          <input type="password" id="gh-token" placeholder="github_pat_..." required autocomplete="current-password">
+          
+          <label for="gh-repo">GitHub Deposu (Format: kullanıcıadı/depo-adı):</label>
+          <input type="text" id="gh-repo" placeholder="kullanici/depo-adi" required>
+          
+          <div class="auth-help">
+            <p>💡 <strong>PAT Anahtarı Nasıl Oluşturulur:</strong></p>
+            <ol>
+              <li>GitHub hesabınızda <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Erişim Anahtarı Ayarları</a> sayfasına gidin.</li>
+              <li>Anahtara bir isim verin (Örn: `Care Tracker`). Süresini "No expiration" (Süresiz) yapın.</li>
+              <li><strong>Repository access</strong> kısmından ilgili deponuzu seçin.</li>
+              <li><strong>Permissions</strong> altında, <strong>Repository permissions</strong> sekmesini açıp <strong>Contents</strong> yetkisini <strong>Read and Write</strong> (Oku ve Yaz) yapın.</li>
+              <li>En alttaki <strong>Generate token</strong> butonuna tıklayarak oluşturulan kodu kopyalayıp buraya yapıştırın!</li>
+            </ol>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Bağlan ve Verileri Yükle</button>
+        </form>
+      </section>
+
+      <!-- Admin Editor Panel: Displays once authenticated -->
+      <div id="admin-editor" style="display: none;">
+        
+        <div class="admin-grid">
+          
+          <!-- Column 1: Add New Appointment Form -->
+          <div class="glass-card editor-card">
+            <h3>Yeni Randevu / İşlem Ekle</h3>
+            <form id="appointment-form" class="form-grid">
+              
+              <div class="input-container full-width">
+                <label for="apt-title">Randevu / İşlem Başlığı:*</label>
+                <input type="text" id="apt-title" placeholder="Örn: Doktor Kontrolü, Tahlil Çekimi" required>
+              </div>
+
+              <div class="input-container">
+                <label for="apt-date">Tarih:*</label>
+                <input type="date" id="apt-date" required>
+              </div>
+
+              <div class="input-container">
+                <label for="apt-time">Saat:*</label>
+                <input type="time" id="apt-time" required>
+              </div>
+
+              <div class="input-container">
+                <label for="apt-category">Kategori:*</label>
+                <select id="apt-category" required>
+                  <option value="treatment">🧪 Planlı Uygulama (Tedavi, Klinik Seans vb.)</option>
+                  <option value="consultation">🩺 Doktor Görüşmesi / Kontrol</option>
+                  <option value="scan">📸 Tahlil, Tetkik & Görüntüleme</option>
+                </select>
+              </div>
+
+              <div class="input-container">
+                <label for="apt-doctor">Doktor / Uzman:</label>
+                <input type="text" id="apt-doctor" placeholder="Örn: Dr. Serkan Yılmaz">
+              </div>
+
+              <div class="input-container full-width">
+                <label for="apt-location">Konum / Adres / Oda:</label>
+                <input type="text" id="apt-location" placeholder="Örn: Şehir Hastanesi Polikliniği, B Blok">
+              </div>
+
+              <div class="input-container full-width">
+                <label for="apt-notes">Açıklama & Hatırlatma Notları:</label>
+                <textarea id="apt-notes" rows="3" placeholder="Örn: Aç karnına gidilecek. Giriş belgesini yanınıza alın."></textarea>
+              </div>
+
+              <div class="form-actions full-width">
+                <button type="submit" id="btn-save-appointment" class="btn btn-primary">
+                  <span>Randevuyu Ekle</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Column 2: Edit Daily Message & Manage Current Appointments -->
+          <div class="admin-column-stack">
+            
+            <!-- Daily Message Editor -->
+            <div class="glass-card message-card-editor">
+              <h3>Günün Notunu Değiştir</h3>
+              <p class="card-subtitle text-muted">Ana sayfanın en üstünde görülecek notu güncelleyin:</p>
+              
+              <form id="message-form" class="form-group">
+                <textarea id="msg-text" rows="3" placeholder="Günün notunu buraya yazın..." required></textarea>
+                <button type="submit" id="btn-save-message" class="btn btn-secondary">Notu Güncelle</button>
+              </form>
+            </div>
+
+            <!-- Medication List Manager -->
+            <div class="glass-card med-card-editor">
+              <h3>Günlük İlaç Takibini Yönet</h3>
+              <p class="card-subtitle text-muted">Aktif günlük ilaç listesi:</p>
+              
+              <form id="med-add-form" class="med-inline-add">
+                <input type="text" id="med-new-name" placeholder="İlaç adı ve kullanım talimatı" required>
+                <input type="text" id="med-new-time" placeholder="Kullanım Saati (Örn: 08:00)" required>
+                <button type="submit" class="btn btn-icon" title="İlaç ekle">+</button>
+              </form>
+
+              <ul id="admin-meds-list" class="admin-med-list" role="list">
+                <!-- Javascript rendered -->
+              </ul>
+            </div>
+
+            <!-- Contacts Manager -->
+            <div class="glass-card contacts-card-editor">
+              <h3>İletişim Rehberini Yönet</h3>
+              <p class="card-subtitle text-muted">Önemli telefon numaraları:</p>
+              
+              <form id="contact-add-form" class="med-inline-add">
+                <input type="text" id="contact-new-name" placeholder="Kişi / Birim Adı" required>
+                <input type="text" id="contact-new-phone" placeholder="Telefon Numarası" required>
+                <button type="submit" class="btn btn-icon" title="Kişi ekle">+</button>
+              </form>
+
+              <ul id="admin-contacts-list" class="admin-contact-list" role="list">
+                <!-- Javascript rendered -->
+              </ul>
+            </div>
+
+            <!-- Account Details / Log Out -->
+            <div class="glass-card account-card">
+              <h3>GitHub Oturumu</h3>
+              <p class="text-muted">Bağlı Depo: <span id="connected-repo-label" class="repo-highlight"></span></p>
+              <div class="account-actions">
+                <button id="btn-logout" class="btn btn-danger">Bağlantıyı Kes & Çıkış Yap</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Scrollable Active Appointments List -->
+        <section class="glass-card active-appointments-section">
+          <h3>Kayıtlı Randevu Listesi</h3>
+          <p class="card-subtitle text-muted">Sistemde ekli olan randevular. Geçmiş randevuları silerek listeyi temiz tutabilirsiniz.</p>
+          
+          <div class="table-responsive">
+            <table class="appointments-table">
+              <thead>
+                <tr>
+                  <th>Tarih & Saat</th>
+                  <th>Kategori</th>
+                  <th>İşlem Detayları</th>
+                  <th>Uzman & Konum</th>
+                  <th>İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="admin-appointments-tbody">
+                <!-- Javascript rendered rows -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Global Action Notification Toast Banner -->
+  <div id="toast" class="toast-banner" role="alert" aria-live="polite">
+    <span id="toast-icon"></span>
+    <span id="toast-message">İşlem yapılıyor</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

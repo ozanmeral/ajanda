@@ -1,0 +1,45 @@
+{
+  "dailyMessage": "Günaydın! Bugünün senin için huzurlu, rahat ve çok güzel geçmesini diliyorum. Kendini yorma, bol bol dinlen. Seni çok seviyorum. ❤️ — Ozan",
+  "medications": [
+    { "id": "med-1", "name": "Sabah İlaçları (Kahvaltıdan sonra tok karnına)", "time": "08:00" },
+    { "id": "med-2", "name": "Öğle Takviyeleri (Bol su ile alınacak)", "time": "14:00" },
+    { "id": "med-3", "name": "Akşam İlacı (Bulantı önleyici & Rahat uyku için)", "time": "20:00" }
+  ],
+  "appointments": [
+    {
+      "id": "apt-1",
+      "title": "Cerrahi Poliklinik Kontrolü",
+      "date": "2026-06-02",
+      "time": "11:24",
+      "category": "consultation",
+      "doctor": "Prof. Dr. Mahmut Müslümanoğlu",
+      "location": "ÇAPAYERLEŞKESİ - EK POLİKLİNİK BİNASI",
+      "notes": "Planlı kontrol muayenesi. Randevu saatinden 15 dakika önce poliklinikte bulunulması rica olunur."
+    },
+    {
+      "id": "apt-2",
+      "title": "Enfeksiyon Hastalıkları Poliklinik Görüşmesi",
+      "date": "2026-06-03",
+      "time": "10:00",
+      "category": "consultation",
+      "doctor": "Uzm. Dr. Derya Özyiğitoğlu",
+      "location": "Sultan Abdülhamid Han Eğitim ve Araştırma Hastanesi",
+      "notes": "Rutin uzman kontrolü. Son yapılan tetkik sonuçlarınızı yanınızda bulundurabilirsiniz."
+    },
+    {
+      "id": "apt-3",
+      "title": "Ruh Sağlığı ve Hastalıkları Görüşmesi",
+      "date": "2026-06-03",
+      "time": "14:00",
+      "category": "consultation",
+      "doctor": "Uzm. Dr. Meliha Zengin Eroğlu",
+      "location": "Sultan Abdülhamid Han Eğitim ve Araştırma Hastanesi",
+      "notes": "Rutin destek ve takip görüşmesi."
+    }
+  ],
+  "contacts": [
+    { "name": "Klinik Destek & Danışma Hattı", "phone": "+90-555-123-4567" },
+    { "name": "Hastane İletişim / Koordinasyon", "phone": "+90-555-987-6543" },
+    { "name": "İletişim - Ozan", "phone": "+90-555-555-1234" }
+  ]
+}
