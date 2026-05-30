@@ -311,7 +311,6 @@ function renderDashboardView() {
           const dayNum = apt.parsedDate.getDate();
           const weekdayStr = apt.parsedDate.toLocaleString("tr-TR", { weekday: "long" });
           const monthStr = apt.parsedDate.toLocaleString("tr-TR", { month: "long" });
-          const yearStr = apt.parsedDate.getFullYear();
 
           // Kategori etiketleri
           let categoryLabel = "Planlı İşlem";
@@ -332,7 +331,7 @@ function renderDashboardView() {
               <div class="timeline-time-box">
                 <span class="timeline-weekday">${escapeHTML(capitalizeTurkish(weekdayStr))}</span>
                 <span class="timeline-date-day">${dayNum}</span>
-                <span class="timeline-date-month">${escapeHTML(monthStr)} ${yearStr}</span>
+                <span class="timeline-date-month">${escapeHTML(monthStr)}</span>
                 <span class="timeline-date-time">
                   <span class="timeline-time-label">Saat</span>
                   ${escapeHTML(apt.time)}

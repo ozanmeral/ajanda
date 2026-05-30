@@ -1223,16 +1223,22 @@ textarea:focus {
   }
 
   .timeline-time-box {
-    grid-template-columns: auto auto 1fr;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    column-gap: 0.6rem;
   }
 
   .timeline-weekday {
-    grid-column: 1 / -1;
+    grid-column: auto;
+  }
+
+  .timeline-date-month {
+    min-width: 0;
   }
 
   .timeline-date-time {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
+    grid-column: auto;
+    justify-content: center;
+    margin-left: 0;
     width: fit-content;
   }
 
