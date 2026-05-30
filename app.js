@@ -166,8 +166,9 @@ async function loadData() {
         "Expires": "0"
       };
 
+      // CORS el sıkışmasını ve yetkilendirmeyi kolaylaştırmak amacıyla 'Bearer' standardı kullanılıyor
       if (ghConfig.token) {
-        headers["Authorization"] = `token ${ghConfig.token}`;
+        headers["Authorization"] = `Bearer ${ghConfig.token}`;
       }
 
       console.log("Aşama 1: GitHub REST API üzerinden anlık canlı veriler çekiliyor...");
@@ -580,10 +581,11 @@ async function pushDataToGitHub(updatedState, successMessage) {
   const apiUrl = `https://api.github.com/repos/${repo}/contents/data.json`;
   
   try {
-    // 1. Get the current file details (need the 'sha' hash to overwrite file in Git)
+    // 1. Güncel dosya bilgilerini çek (Dosyayı ezebilmek için 'sha' değerini almak şart)
+    // El sıkışma CORS ve preflight kontrolünü Bearer olarak modern yapıda yapıyoruz
     const getResponse = await fetch(apiUrl, {
       headers: {
-        "Authorization": `token ${ghConfig.token}`,
+        "Authorization": `Bearer ${ghConfig.token}`,
         "Accept": "application/vnd.github.v3+json",
         "Cache-Control": "no-cache"
       }
@@ -597,14 +599,14 @@ async function pushDataToGitHub(updatedState, successMessage) {
       throw new Error(`Dosya kontrol hatası: ${getResponse.statusText}`);
     }
 
-    // 2. Perform the update/write (PUT)
+    // 2. Güncelleme isteğini gönder (PUT)
     const jsonString = JSON.stringify(updatedState, null, 2);
     const base64Content = btoa(unescape(encodeURIComponent(jsonString)));
 
     const putResponse = await fetch(apiUrl, {
       method: "PUT",
       headers: {
-        "Authorization": `token ${ghConfig.token}`,
+        "Authorization": `Bearer ${ghConfig.token}`,
         "Content-Type": "application/json",
         "Accept": "application/vnd.github.v3+json"
       },
@@ -620,7 +622,7 @@ async function pushDataToGitHub(updatedState, successMessage) {
       throw new Error(errBody.message || "Yazma hatası");
     }
 
-    // 3. Update memory state & show beautiful success notification
+    // 3. Eşitleme başarılı: belleği güncelle ve başarı mesajı göster
     appState = updatedState;
     showToast(successMessage || "✅ Güncelleme başarıyla kaydedildi!", "success");
     return true;
