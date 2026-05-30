@@ -222,13 +222,16 @@ async function loadData() {
 function renderDashboardView() {
   // 1. Günün Mesajını Yaz
   const msgTextEl = document.getElementById("daily-message-text");
-  msgTextEl.innerHTML = appState.dailyMessage || "Huzurlu ve güzel bir gün dilerim. ❤️";
+  if (msgTextEl) {
+    msgTextEl.innerHTML = appState.dailyMessage || "Huzurlu ve güzel bir gün dilerim. ❤️";
+  }
 
   // 2. Randevuları ve Zaman Çizelgesini Oluştur
   const timelineEl = document.getElementById("care-timeline");
   const countEl = document.getElementById("appointment-count");
   
   if (!appState.appointments || appState.appointments.length === 0) {
+    renderAppointmentCalendar([], new Date());
     timelineEl.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">🩺</div>
@@ -260,6 +263,7 @@ function renderDashboardView() {
   countEl.textContent = `${sortedApts.length} randevu`;
 
   if (sortedApts.length === 0) {
+    renderAppointmentCalendar([], today);
     timelineEl.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">🌸</div>
@@ -278,7 +282,11 @@ function renderDashboardView() {
   }, new Map());
 
   // Randevu kartlarını gün grupları halinde render et
-  timelineEl.innerHTML = Array.from(groupedApts.values()).map((group, groupIndex) => {
+  const groupedAptValues = Array.from(groupedApts.values());
+
+  renderAppointmentCalendar(sortedApts, today);
+
+  timelineEl.innerHTML = groupedAptValues.map((group, groupIndex) => {
     const firstApt = group[0];
     const groupDate = firstApt.parsedDate;
     const weekdayStr = groupDate.toLocaleString("tr-TR", { weekday: "long" });
@@ -289,7 +297,7 @@ function renderDashboardView() {
     const appointmentText = `${group.length} randevu var`;
 
     return `
-      <section class="timeline-day-group day-theme-${groupIndex % 5}" aria-label="${escapeHTML(capitalizeTurkish(weekdayStr))} günü ${appointmentText}">
+      <section class="timeline-day-group day-theme-${groupIndex % 5}" data-timeline-date="${escapeHTML(firstApt.date)}" aria-label="${escapeHTML(capitalizeTurkish(weekdayStr))} günü ${appointmentText}">
         <div class="timeline-day-divider">
           <div>
             <h3>${escapeHTML(capitalizeTurkish(weekdayStr))} günü ${appointmentText}</h3>
@@ -984,6 +992,146 @@ function getTodayDateString() {
   const day = "" + d.getDate();
   const year = d.getFullYear();
   return [year, month.padStart(2, "0"), day.padStart(2, "0")].join("-");
+}
+
+function renderAppointmentCalendar(appointments, todayStart) {
+  const monthsEl = document.getElementById("appointment-calendar-months");
+  const todayLabelEl = document.getElementById("calendar-today-label");
+  const rangeLabelEl = document.getElementById("calendar-range-label");
+  if (!monthsEl || !todayLabelEl || !rangeLabelEl) return;
+
+  const appointmentsByDate = appointments.reduce((map, apt) => {
+    if (!map.has(apt.date)) {
+      map.set(apt.date, []);
+    }
+    map.get(apt.date).push(apt);
+    return map;
+  }, new Map());
+
+  const todayKey = formatDateKey(todayStart);
+  const monthDates = getCalendarMonthDates(appointments, todayStart);
+
+  todayLabelEl.textContent = `Bugün: ${formatShortAppointmentDate(todayStart)}`;
+  rangeLabelEl.textContent = appointments.length
+    ? `Sıradaki randevu: ${formatShortAppointmentDate(appointments[0].parsedDate)}`
+    : "Yaklaşan randevu yok";
+
+  const appointmentDateOrder = Array.from(appointmentsByDate.keys());
+  const dateThemeMap = appointmentDateOrder.reduce((map, dateKey, index) => {
+    map.set(dateKey, index % 5);
+    return map;
+  }, new Map());
+
+  monthsEl.innerHTML = monthDates.map(monthDate =>
+    renderCalendarMonth(monthDate, appointmentsByDate, dateThemeMap, todayKey)
+  ).join("");
+
+  monthsEl.querySelectorAll("[data-calendar-date]").forEach(button => {
+    button.addEventListener("click", () => {
+      const target = document.querySelector(`[data-timeline-date="${button.getAttribute("data-calendar-date")}"]`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  });
+}
+
+function renderCalendarMonth(monthDate, appointmentsByDate, dateThemeMap, todayKey) {
+  const month = monthDate.getMonth();
+  const year = monthDate.getFullYear();
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leadingBlankCount = (firstDay.getDay() + 6) % 7;
+  let monthAppointmentCount = 0;
+  let daysHTML = "";
+
+  for (let i = 0; i < leadingBlankCount; i++) {
+    daysHTML += `<span class="calendar-day is-empty" aria-hidden="true"></span>`;
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const dateKey = formatDateKey(date);
+    const dayAppointments = appointmentsByDate.get(dateKey) || [];
+    const hasAppointment = dayAppointments.length > 0;
+    const themeClass = hasAppointment ? `day-theme-${dateThemeMap.get(dateKey)}` : "";
+    const label = hasAppointment
+      ? `${day} ${date.toLocaleString("tr-TR", { month: "long" })}: ${dayAppointments.length} randevu`
+      : `${day} ${date.toLocaleString("tr-TR", { month: "long" })}`;
+    const dayContent = `
+      <span class="calendar-day-number">${day}</span>
+      ${hasAppointment ? `<span class="calendar-day-dot">${dayAppointments.length}</span>` : ""}
+    `;
+    monthAppointmentCount += dayAppointments.length;
+
+    if (hasAppointment) {
+      daysHTML += `
+        <button class="calendar-day has-appointment ${themeClass} ${dateKey === todayKey ? "is-today" : ""}" type="button" data-calendar-date="${dateKey}" aria-label="${escapeHTML(label)}">
+          ${dayContent}
+        </button>
+      `;
+    } else {
+      daysHTML += `
+        <span class="calendar-day ${dateKey === todayKey ? "is-today" : ""}" aria-label="${escapeHTML(label)}">
+          ${dayContent}
+        </span>
+      `;
+    }
+  }
+
+  const monthName = capitalizeTurkish(monthDate.toLocaleString("tr-TR", { month: "long" }));
+  const appointmentText = `${monthAppointmentCount} randevu`;
+
+  return `
+    <section class="calendar-month" aria-label="${escapeHTML(monthName)} ${year}, ${appointmentText}">
+      <div class="calendar-month-header">
+        <h3>${escapeHTML(monthName)} ${year}</h3>
+        <span>${appointmentText}</span>
+      </div>
+      <div class="calendar-weekdays" aria-hidden="true">
+        <span>Pzt</span>
+        <span>Sal</span>
+        <span>Çar</span>
+        <span>Per</span>
+        <span>Cum</span>
+        <span>Cmt</span>
+        <span>Paz</span>
+      </div>
+      <div class="calendar-grid">
+        ${daysHTML}
+      </div>
+    </section>
+  `;
+}
+
+function getCalendarMonthDates(appointments, todayStart) {
+  const start = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1);
+  const end = appointments.length
+    ? new Date(appointments[appointments.length - 1].parsedDate.getFullYear(), appointments[appointments.length - 1].parsedDate.getMonth(), 1)
+    : start;
+  const months = [];
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    months.push(new Date(cursor));
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  return months;
+}
+
+function formatDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatShortAppointmentDate(date) {
+  const weekday = capitalizeTurkish(date.toLocaleString("tr-TR", { weekday: "long" }));
+  const day = date.getDate();
+  const month = date.toLocaleString("tr-TR", { month: "long" });
+  return `${day} ${month}, ${weekday}`;
 }
 
 function parseAppointmentDate(dateStr) {

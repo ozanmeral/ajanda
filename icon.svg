@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Günlük takip paneli ikonu">
+  <defs>
+    <linearGradient id="bg" x1="88" y1="56" x2="424" y2="456" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#eff6ff"/>
+      <stop offset="0.48" stop-color="#dbeafe"/>
+      <stop offset="1" stop-color="#d1fae5"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="128" y1="120" x2="392" y2="408" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#1e3a8a" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="407" cy="112" r="38" fill="#ffffff" opacity="0.65"/>
+  <circle cx="98" cy="410" r="46" fill="#ffffff" opacity="0.38"/>
+
+  <g filter="url(#soft-shadow)">
+    <rect x="104" y="108" width="304" height="304" rx="54" fill="#ffffff"/>
+    <path d="M104 166c0-32 26-58 58-58h188c32 0 58 26 58 58v36H104v-36Z" fill="url(#accent)"/>
+    <rect x="158" y="76" width="34" height="72" rx="17" fill="#1e40af"/>
+    <rect x="320" y="76" width="34" height="72" rx="17" fill="#047857"/>
+
+    <g fill="#e2e8f0">
+      <rect x="146" y="244" width="52" height="44" rx="14"/>
+      <rect x="230" y="244" width="52" height="44" rx="14"/>
+      <rect x="314" y="244" width="52" height="44" rx="14"/>
+      <rect x="146" y="320" width="52" height="44" rx="14"/>
+      <rect x="314" y="320" width="52" height="44" rx="14"/>
+    </g>
+
+    <rect x="230" y="320" width="52" height="44" rx="14" fill="#d1fae5"/>
+    <circle cx="256" cy="342" r="14" fill="#059669"/>
+  </g>
+
+  <path d="M256 391c-7-7-53-37-53-76 0-22 16-39 37-39 12 0 23 6 29 16 6-10 17-16 29-16 21 0 37 17 37 39 0 39-46 69-53 76-7 6-19 6-26 0Z" fill="#ef4444"/>
+  <path d="M256 379c-6-6-42-30-42-61 0-17 12-30 28-30 10 0 18 5 23 13 5-8 13-13 23-13 16 0 28 13 28 30 0 31-36 55-42 61-5 5-13 5-18 0Z" fill="#f87171"/>
+</svg>

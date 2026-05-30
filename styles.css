@@ -108,6 +108,18 @@ a:hover {
   color: var(--text-muted);
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -130,44 +142,15 @@ a:hover {
    Header Styling
    ========================================================================== */
 .app-header {
-  padding: 2.5rem 2rem 1.5rem;
+  padding: 1rem 2rem 0;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .header-content {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  padding-bottom: 1.5rem;
-}
-
-.header-branding h1 {
-  font-size: 2rem;
-  color: #0f172a;
-  letter-spacing: 0;
-}
-
-.header-branding p {
-  font-size: 0.95rem;
-  margin-top: 0.25rem;
-}
-
-.today-summary {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  margin-top: 0.85rem;
-  padding: 0.45rem 0.8rem;
-  border: 1px solid rgba(14, 165, 233, 0.18);
-  border-radius: 999px;
-  background-color: rgba(224, 242, 254, 0.65);
-  color: #075985;
-  font-family: var(--font-header);
-  font-size: 0.98rem;
-  font-weight: 700;
-  box-shadow: 0 6px 18px rgba(14, 165, 233, 0.06);
 }
 
 /* Elegant setting gear button */
@@ -220,7 +203,7 @@ a:hover {
 .app-view {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0.75rem 2rem 0;
 }
 
 /* Encouragement Banner (Hero Card) */
@@ -257,6 +240,144 @@ a:hover {
   line-height: 1.4;
   color: #1e293b;
   margin-top: 0.75rem;
+}
+
+.calendar-card {
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(14, 165, 233, 0.12);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.calendar-header h2 {
+  margin-top: 0.4rem;
+  font-size: 1.35rem;
+  color: #0f172a;
+}
+
+.calendar-next-label {
+  color: var(--text-muted);
+  font-family: var(--font-header);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.calendar-months {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 1rem;
+}
+
+.calendar-month {
+  padding: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.calendar-month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.calendar-month-header h3 {
+  color: #0f172a;
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.calendar-month-header span {
+  color: var(--text-muted);
+  font-family: var(--font-header);
+  font-size: 0.84rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.calendar-weekdays {
+  margin-bottom: 0.45rem;
+  color: var(--text-muted);
+  font-family: var(--font-header);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.calendar-day {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 3rem;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 12px;
+  background-color: rgba(248, 250, 252, 0.72);
+  color: #334155;
+  font-family: var(--font-header);
+  font-size: 0.94rem;
+  font-weight: 800;
+}
+
+button.calendar-day {
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+button.calendar-day:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px var(--day-shadow);
+}
+
+.calendar-day.is-empty {
+  visibility: hidden;
+}
+
+.calendar-day.is-today {
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.calendar-day.has-appointment {
+  border-color: var(--day-color);
+  background: linear-gradient(145deg, #fff, var(--day-color-soft));
+  color: var(--day-color-dark);
+  box-shadow: 0 7px 18px var(--day-shadow);
+}
+
+.calendar-day-number {
+  line-height: 1;
+}
+
+.calendar-day-dot {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.32rem;
+  display: grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background-color: var(--day-color);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
 }
 
 /* Grid layout */
@@ -300,6 +421,9 @@ a:hover {
   flex-direction: column;
   gap: 1rem;
   padding-top: 0.25rem;
+}
+
+.day-theme-0 {
   --day-color: #2563eb;
   --day-color-dark: #1e40af;
   --day-color-soft: #dbeafe;
@@ -1174,15 +1298,11 @@ textarea:focus {
   }
   
   .app-header {
-    padding: 1.5rem 1rem 1rem;
-  }
-  
-  .header-branding h1 {
-    font-size: 1.6rem;
+    padding: 0.75rem 1rem 0;
   }
   
   .app-view {
-    padding: 0 1rem;
+    padding: 0.5rem 1rem 0;
   }
   
   .dashboard-grid {
@@ -1256,6 +1376,35 @@ textarea:focus {
 
   .hero-message {
     font-size: 1.15rem;
+  }
+
+  .calendar-card {
+    padding: 1rem;
+  }
+
+  .calendar-months {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .calendar-next-label {
+    text-align: left;
+  }
+
+  .calendar-weekdays,
+  .calendar-grid {
+    gap: 0.3rem;
+  }
+
+  .calendar-day {
+    min-height: 2.55rem;
+    border-radius: 10px;
+    font-size: 0.86rem;
   }
 
   .timeline-time-box {

@@ -3,25 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#eff6ff">
   <title>Günlük Takip Paneli</title>
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-512.png">
   
   <!-- Calming Fonts: Outfit for clean, friendly, soft headers; Inter for crisp, readable body text -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=1.0.9">
+  <link rel="stylesheet" href="styles.css?v=1.2.0">
 </head>
 <body>
 
   <!-- Top Decorative Header with soft greeting -->
   <header class="app-header">
     <div class="header-content">
-      <div class="header-branding">
-        <h1 id="app-title">Günlük Takip Paneli</h1>
-        <p id="app-subtitle" class="text-muted">Planlanmış randevular, günlük işlemler ve genel takip günlüğü</p>
-        <p id="today-summary" class="today-summary">Bugün</p>
-      </div>
+      <h1 id="app-title" class="visually-hidden">Günlük Takip Paneli</h1>
       <a href="#admin" id="admin-link-gear" class="admin-gear" aria-label="Yönetim Paneline Git" title="Yönetici Ayarları">
         <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       </a>
@@ -30,13 +30,19 @@
 
   <!-- VIEW 1: Main Care Dashboard (Visible by default) -->
   <main id="view-dashboard" class="app-view active" aria-labelledby="app-title">
-    
-    <!-- Encouragement Box / Custom Note from Partner/Son -->
-    <section id="daily-card" class="glass-card hero-card" aria-label="Günün mesajı">
-      <div class="hero-card-pattern"></div>
-      <div class="hero-card-content">
-        <span class="badge badge-warm">Günün Notu</span>
-        <p id="daily-message-text" class="hero-message">Mesaj yükleniyor...</p>
+
+    <section id="appointment-calendar-card" class="glass-card calendar-card" aria-label="Randevu takvimi">
+      <div class="calendar-header">
+        <div>
+          <span id="calendar-today-label" class="badge">Bugün</span>
+          <h2>Randevu Takvimi</h2>
+        </div>
+        <p id="calendar-range-label" class="calendar-next-label">Yaklaşan randevular</p>
+      </div>
+      <div id="appointment-calendar-months" class="calendar-months">
+        <div class="loading-state">
+          <span class="spinner"></span>
+        </div>
       </div>
     </section>
 
@@ -282,6 +288,6 @@
     <span id="toast-message">İşlem yapılıyor</span>
   </div>
 
-  <script src="app.js?v=1.0.9"></script>
+  <script src="app.js?v=1.2.0"></script>
 </body>
 </html>
