@@ -1,12 +1,6 @@
 {
   "dailyMessage": "Günaydın! Bugünün senin için huzurlu, rahat ve çok güzel geçmesini diliyorum. Kendini yorma, bol bol dinlen. Seni çok seviyorum. ❤️ — Ozan",
-  "medications": [
-    {
-      "id": "med-3",
-      "name": "Akşam İlacı (Bulantı önleyici & Rahat uyku için)",
-      "time": "20:00"
-    }
-  ],
+  "medications": [],
   "appointments": [
     {
       "id": "apt-1",
