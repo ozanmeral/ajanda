@@ -157,13 +157,10 @@ async function loadData() {
     
     // AŞAMA 1: Doğrudan GitHub API ile Ham İçerik Çekimi (Gecikme Süresi: 0 Saniye!)
     try {
-      const apiFetchUrl = `https://api.github.com/repos/${repo}/contents/data.json`;
+      const apiFetchUrl = `https://api.github.com/repos/${repo}/contents/data.json?t=${Date.now()}`;
       
       const headers = { 
-        "Accept": "application/vnd.github.v3.raw",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0"
+        "Accept": "application/vnd.github.v3.raw"
       };
 
       // CORS el sıkışmasını ve yetkilendirmeyi kolaylaştırmak amacıyla 'Bearer' standardı kullanılıyor
@@ -583,11 +580,10 @@ async function pushDataToGitHub(updatedState, successMessage) {
   try {
     // 1. Güncel dosya bilgilerini çek (Dosyayı ezebilmek için 'sha' değerini almak şart)
     // El sıkışma CORS ve preflight kontrolünü Bearer olarak modern yapıda yapıyoruz
-    const getResponse = await fetch(apiUrl, {
+    const getResponse = await fetch(`${apiUrl}?t=${Date.now()}`, {
       headers: {
         "Authorization": `Bearer ${ghConfig.token}`,
-        "Accept": "application/vnd.github.v3+json",
-        "Cache-Control": "no-cache"
+        "Accept": "application/vnd.github.v3+json"
       }
     });
 
