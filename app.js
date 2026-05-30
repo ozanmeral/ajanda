@@ -247,13 +247,9 @@ function renderDashboardView() {
   const sortedApts = appState.appointments
     .map(apt => ({
       ...apt,
-      parsedDate: new Date(apt.date + "T00:00:00") // Yerel saat diliminde çözümlenmesi için zorla
+      parsedDate: parseAppointmentDate(apt.date)
     }))
-    .filter(apt => {
-      const aptDate = new Date(apt.parsedDate);
-      aptDate.setHours(0, 0, 0, 0);
-      return aptDate >= today;
-    })
+    .filter(apt => isAppointmentVisibleOnDashboard(apt.parsedDate, today))
     .sort((a, b) => {
       if (a.date !== b.date) {
         return a.parsedDate - b.parsedDate;
@@ -987,6 +983,22 @@ function getTodayDateString() {
   const day = "" + d.getDate();
   const year = d.getFullYear();
   return [year, month.padStart(2, "0"), day.padStart(2, "0")].join("-");
+}
+
+function parseAppointmentDate(dateStr) {
+  // Yerel gün başlangıcında çözümleyerek saat dilimi kaynaklı dün/bugün kaymalarını önler.
+  return new Date(`${dateStr}T00:00:00`);
+}
+
+function isAppointmentVisibleOnDashboard(appointmentDate, todayStart) {
+  if (!(appointmentDate instanceof Date) || Number.isNaN(appointmentDate.getTime())) {
+    return false;
+  }
+
+  const appointmentDay = new Date(appointmentDate);
+  appointmentDay.setHours(0, 0, 0, 0);
+
+  return appointmentDay >= todayStart;
 }
 
 function renderTodaySummary() {
