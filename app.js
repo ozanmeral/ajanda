@@ -61,6 +61,12 @@ let appState = {
 // Düzenleme modunda olan randevunun ID'sini tutar
 let editingAppointmentId = null;
 
+const CONFIRMATION_STATUS = {
+  PENDING: "pending",
+  CONFIRMED: "confirmed",
+  NOT_REQUIRED: "not_required"
+};
+
 // Yerel depolamadan alınan GitHub yapılandırması
 let ghConfig = {
   token: localStorage.getItem("care_gh_token") || "",
@@ -250,6 +256,7 @@ function renderDashboardView() {
   const sortedApts = appState.appointments
     .map(apt => ({
       ...apt,
+      confirmationStatus: normalizeConfirmationStatus(apt.confirmationStatus),
       parsedDate: parseAppointmentDate(apt.date)
     }))
     .filter(apt => isAppointmentVisibleOnDashboard(apt.parsedDate, today))
@@ -315,6 +322,13 @@ function renderDashboardView() {
           const dayNum = apt.parsedDate.getDate();
           const weekdayStr = apt.parsedDate.toLocaleString("tr-TR", { weekday: "long" });
           const monthStr = apt.parsedDate.toLocaleString("tr-TR", { month: "long" });
+          const confirmationStatus = normalizeConfirmationStatus(apt.confirmationStatus);
+          const confirmationInfo = getConfirmationInfo(apt, today);
+          const calendarHref = createCalendarEventHref(apt);
+          const calendarFileName = `${safeFileSlug(apt.title || "randevu")}.ics`;
+          const calendarAction = isAppleMobileDevice()
+            ? `<a class="calendar-add-link" href="${calendarHref}" download="${escapeHTML(calendarFileName)}">Takvime Ekle</a>`
+            : "";
 
           // Kategori etiketleri
           let categoryLabel = "Planlı İşlem";
@@ -350,6 +364,11 @@ function renderDashboardView() {
                 </div>
                 <h3 class="timeline-title">${escapeHTML(apt.title)}</h3>
 
+                <div class="confirmation-box confirmation-${confirmationStatus}">
+                  <span class="confirmation-label">${escapeHTML(confirmationInfo.label)}</span>
+                  <span class="confirmation-message">${escapeHTML(confirmationInfo.message)}</span>
+                </div>
+
                 <div class="timeline-meta">
                   ${apt.doctor ? `
                     <div class="meta-row">
@@ -376,6 +395,8 @@ function renderDashboardView() {
                     ${escapeHTML(apt.notes).replace(/\n/g, "<br>")}
                   </div>
                 ` : ""}
+
+                ${calendarAction ? `<div class="timeline-actions">${calendarAction}</div>` : ""}
               </div>
             </article>
           `;
@@ -539,6 +560,7 @@ function renderAdminAppointmentsTable() {
         </td>
         <td>
           <div class="table-title">${escapeHTML(apt.title)}</div>
+          <div class="confirmation-table-status">${escapeHTML(getConfirmationStatusLabel(normalizeConfirmationStatus(apt.confirmationStatus)))}</div>
           <div class="table-notes-preview" title="${escapeHTML(apt.notes || '')}">${escapeHTML(apt.notes || "Not eklenmemiş.")}</div>
         </td>
         <td>
@@ -673,6 +695,7 @@ async function handleAddAppointment(e) {
   const date = document.getElementById("apt-date").value;
   const time = document.getElementById("apt-time").value;
   const category = document.getElementById("apt-category").value;
+  const confirmationStatus = normalizeConfirmationStatus(document.getElementById("apt-confirmation-status").value);
   const doctor = document.getElementById("apt-doctor").value.trim();
   const location = document.getElementById("apt-location").value.trim();
   const notes = document.getElementById("apt-notes").value.trim();
@@ -693,6 +716,7 @@ async function handleAddAppointment(e) {
           date,
           time,
           category,
+          confirmationStatus,
           doctor: doctor || undefined,
           location: location || undefined,
           notes: notes || undefined
@@ -713,6 +737,7 @@ async function handleAddAppointment(e) {
       date,
       time,
       category,
+      confirmationStatus,
       doctor: doctor || undefined,
       location: location || undefined,
       notes: notes || undefined
@@ -746,6 +771,7 @@ function startEditAppointment(id) {
   document.getElementById("apt-date").value = apt.date || "";
   document.getElementById("apt-time").value = apt.time || "";
   document.getElementById("apt-category").value = apt.category || "consultation";
+  document.getElementById("apt-confirmation-status").value = normalizeConfirmationStatus(apt.confirmationStatus);
   document.getElementById("apt-doctor").value = apt.doctor || "";
   document.getElementById("apt-location").value = apt.location || "";
   document.getElementById("apt-notes").value = apt.notes || "";
@@ -1148,6 +1174,129 @@ function isAppointmentVisibleOnDashboard(appointmentDate, todayStart) {
   appointmentDay.setHours(0, 0, 0, 0);
 
   return appointmentDay >= todayStart;
+}
+
+function normalizeConfirmationStatus(status) {
+  if (status === CONFIRMATION_STATUS.CONFIRMED || status === CONFIRMATION_STATUS.NOT_REQUIRED) {
+    return status;
+  }
+  return CONFIRMATION_STATUS.PENDING;
+}
+
+function getConfirmationStatusLabel(status) {
+  if (status === CONFIRMATION_STATUS.CONFIRMED) return "Onaylandı";
+  if (status === CONFIRMATION_STATUS.NOT_REQUIRED) return "Onay gerekmiyor";
+  return "Onaylanmadı";
+}
+
+function getConfirmationInfo(apt, now = new Date()) {
+  const status = normalizeConfirmationStatus(apt.confirmationStatus);
+  if (status === CONFIRMATION_STATUS.CONFIRMED) {
+    return {
+      label: "Onaylandı",
+      message: "Bu randevunun onayı tamamlandı."
+    };
+  }
+
+  if (status === CONFIRMATION_STATUS.NOT_REQUIRED) {
+    return {
+      label: "Onay gerekmiyor",
+      message: "Bu randevu için ayrıca onay işlemi gerekmiyor."
+    };
+  }
+
+  const deadline = getConfirmationDeadline(apt.parsedDate || parseAppointmentDate(apt.date));
+  const deadlineText = formatConfirmationDeadline(deadline);
+  const isOverdue = now.getTime() > deadline.getTime();
+
+  return {
+    label: isOverdue ? "Onay süresi geçti" : "Onay bekliyor",
+    message: isOverdue
+      ? `${deadlineText} tarihine kadar onaylanmalıydı.`
+      : `${deadlineText} tarihine kadar onaylanmalı.`
+  };
+}
+
+function getConfirmationDeadline(appointmentDate) {
+  const deadline = new Date(appointmentDate);
+  deadline.setDate(deadline.getDate() - 1);
+  deadline.setHours(20, 0, 0, 0);
+  return deadline;
+}
+
+function formatConfirmationDeadline(date) {
+  const day = date.getDate();
+  const month = date.toLocaleString("tr-TR", { month: "long" });
+  const weekday = capitalizeTurkish(date.toLocaleString("tr-TR", { weekday: "long" }));
+  const time = date.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  return `${day} ${month} ${weekday} ${time}`;
+}
+
+function createCalendarEventHref(apt) {
+  const start = createAppointmentDateTime(apt.date, apt.time);
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const title = apt.title || "Randevu";
+  const descriptionLines = [
+    apt.doctor ? `Uzman: ${apt.doctor}` : "",
+    apt.notes ? `Not: ${apt.notes}` : "",
+    getConfirmationInfo(apt).message
+  ].filter(Boolean);
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Takip Paneli//Appointments//TR",
+    "BEGIN:VEVENT",
+    `UID:${apt.id || Date.now()}@takip-paneli`,
+    `DTSTAMP:${formatIcsDate(new Date(), true)}`,
+    `DTSTART:${formatIcsDate(start)}`,
+    `DTEND:${formatIcsDate(end)}`,
+    `SUMMARY:${escapeIcsText(title)}`,
+    apt.location ? `LOCATION:${escapeIcsText(apt.location)}` : "",
+    descriptionLines.length ? `DESCRIPTION:${escapeIcsText(descriptionLines.join("\\n"))}` : "",
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].filter(Boolean).join("\r\n");
+
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+}
+
+function createAppointmentDateTime(dateStr, timeStr) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const [hour, minute] = timeStr.split(":").map(Number);
+  return new Date(year, month - 1, day, hour || 0, minute || 0, 0);
+}
+
+function formatIcsDate(date, utc = false) {
+  const source = utc ? new Date(date.getTime()) : date;
+  const year = utc ? source.getUTCFullYear() : source.getFullYear();
+  const month = utc ? source.getUTCMonth() + 1 : source.getMonth() + 1;
+  const day = utc ? source.getUTCDate() : source.getDate();
+  const hour = utc ? source.getUTCHours() : source.getHours();
+  const minute = utc ? source.getUTCMinutes() : source.getMinutes();
+  const second = utc ? source.getUTCSeconds() : source.getSeconds();
+  const value = `${year}${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}${String(minute).padStart(2, "0")}${String(second).padStart(2, "0")}`;
+  return utc ? `${value}Z` : value;
+}
+
+function escapeIcsText(str) {
+  return String(str)
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function safeFileSlug(str) {
+  return String(str)
+    .toLocaleLowerCase("tr-TR")
+    .replace(/[^a-z0-9ğüşöçıİĞÜŞÖÇ]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || "randevu";
+}
+
+function isAppleMobileDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
 function renderTodaySummary() {

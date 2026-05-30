@@ -678,6 +678,56 @@ button.calendar-day:hover {
   color: #0f172a;
 }
 
+.confirmation-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  margin-top: 0.85rem;
+  padding: 0.78rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  background-color: #f8fafc;
+}
+
+.confirmation-label {
+  font-family: var(--font-header);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.confirmation-message {
+  color: #475569;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.confirmation-pending {
+  border-color: rgba(245, 158, 11, 0.35);
+  background-color: #fffbeb;
+}
+
+.confirmation-pending .confirmation-label {
+  color: #b45309;
+}
+
+.confirmation-confirmed {
+  border-color: rgba(16, 185, 129, 0.28);
+  background-color: #ecfdf5;
+}
+
+.confirmation-confirmed .confirmation-label {
+  color: #047857;
+}
+
+.confirmation-not_required {
+  border-color: rgba(100, 116, 139, 0.18);
+  background-color: #f8fafc;
+}
+
+.confirmation-not_required .confirmation-label {
+  color: #475569;
+}
+
 .timeline-meta {
   display: flex;
   flex-direction: column;
@@ -706,6 +756,31 @@ button.calendar-day:hover {
   font-size: 0.92rem;
   color: #334155;
   line-height: 1.45;
+}
+
+.timeline-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.calendar-add-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.58rem 0.9rem;
+  border-radius: 10px;
+  background-color: var(--day-color);
+  color: #fff;
+  font-family: var(--font-header);
+  font-size: 0.88rem;
+  font-weight: 800;
+  box-shadow: 0 7px 18px var(--day-shadow);
+}
+
+.calendar-add-link:hover {
+  color: #fff;
+  background-color: var(--day-color-dark);
 }
 
 /* Category card left highlights */
@@ -1199,6 +1274,20 @@ textarea:focus {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.confirmation-table-status {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 0.3rem;
+  margin-bottom: 0.25rem;
+  padding: 0.16rem 0.45rem;
+  border-radius: 999px;
+  background-color: #f1f5f9;
+  color: #475569;
+  font-family: var(--font-header);
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 /* ==========================================================================
