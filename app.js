@@ -138,17 +138,11 @@ function getRepositoryDetails() {
   return { owner: "", repo: "", isGitHubPages: false };
 }
 
-// --- Veri Yükleme ve Önbellek Kırma ---
+// --- ÜÇ AŞAMALI AKILLI VE GECİKMESİZ YÜKLEYİCİ ---
+// Bu fonksiyon hem GitHub Pages derleme gecikmelerini (1-2 dk) hem de CDN önbelleğini baypas eder.
 async function loadData() {
   const { owner, repo } = getRepositoryDetails();
-  let fetchUrl = LOCAL_DATA_FALLBACK;
-
-  // GitHub Pages veya özel depo ayarı mevcutsa, önbelleği kırarak doğrudan ham Git içeriğinden oku
-  if (owner && repo) {
-    fetchUrl = `https://raw.githubusercontent.com/${repo}/main/data.json?t=${Date.now()}`;
-  }
-
-  // Tarayıcının file:// protokolü üzerinden yerel data.json dosyasını çekmesini engelleyen CORS kurallarını bypass et
+  
   if (window.location.protocol === "file:") {
     console.log("file:// protokolünde çalışılıyor. CORS sınırları nedeniyle varsayılan yerel veri kullanılacak.");
     appState = JSON.parse(JSON.stringify(DEFAULT_FALLBACK_STATE));
@@ -156,35 +150,72 @@ async function loadData() {
     return;
   }
 
-  try {
-    const response = await fetch(fetchUrl);
-    if (!response.ok) {
-      throw new Error(`Veri dosyası okunamadı: ${response.statusText}`);
-    }
-    appState = await response.json();
-    renderDashboardView();
-  } catch (error) {
-    console.error("Veri yüklenirken hata:", error);
+  // Eğer repo bilgisi mevcutsa, gecikmesiz canlı veri çekimi başlat
+  if (owner && repo) {
     
-    // Eğer ham Git çekimi başarısız olursa (örn: depo gizli veya henüz kurulmadı), yerel dosyayı dene
-    if (fetchUrl !== LOCAL_DATA_FALLBACK) {
-      try {
-        console.log("Yerel veri dosyasına (data.json) dönülüyor...");
-        const fallbackResponse = await fetch(LOCAL_DATA_FALLBACK);
-        if (fallbackResponse.ok) {
-          appState = await fallbackResponse.json();
-          renderDashboardView();
-          return;
-        }
-      } catch (fallbackError) {
-        console.error("Yerel veri yükleme başarısız:", fallbackError);
+    // AŞAMA 1: Doğrudan GitHub API ile Ham İçerik Çekimi (Gecikme Süresi: 0 Saniye!)
+    // Bu sayede siz telefondan kaydettiğiniz an, annenizin ekranına güncelleme anında yansır.
+    try {
+      const apiFetchUrl = `https://api.github.com/repos/${repo}/contents/data.json`;
+      
+      const headers = { 
+        "Accept": "application/vnd.github.v3.raw",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      };
+
+      // Eğer telefondan görüntülüyorsak ve Erişim Anahtarı varsa, Rate Limit'e takılmamak için ekleyelim
+      if (ghConfig.token) {
+        headers["Authorization"] = `token ${ghConfig.token}`;
       }
+
+      console.log("Aşama 1: GitHub REST API üzerinden anlık canlı veriler çekiliyor...");
+      const response = await fetch(apiFetchUrl, { headers });
+      if (response.ok) {
+        appState = await response.json();
+        console.log("Veriler doğrudan GitHub API üzerinden anında güncellendi.");
+        renderDashboardView();
+        return;
+      } else {
+        console.warn(`GitHub API yanıt vermedi (Durum: ${response.status}). Aşama 2'ye geçiliyor...`);
+      }
+    } catch (apiError) {
+      console.warn("GitHub API bağlantı hatası, Aşama 2'ye geçiliyor...", apiError);
     }
-    
-    // Çevrimdışı/Hata durumunda statik yerel yedek verileri yükle
+
+    // AŞAMA 2: raw.githubusercontent Üzerinden Çekim (Hafif önbellekli sürüm)
+    try {
+      const rawFetchUrl = `https://raw.githubusercontent.com/${repo}/main/data.json?t=${Date.now()}`;
+      console.log("Aşama 2: raw.githubusercontent üzerinden çekim deneniyor...");
+      const response = await fetch(rawFetchUrl);
+      if (response.ok) {
+        appState = await response.json();
+        console.log("Veriler raw.githubusercontent üzerinden yüklendi.");
+        renderDashboardView();
+        return;
+      }
+    } catch (rawError) {
+      console.warn("raw.githubusercontent bağlantı hatası, Aşama 3'e geçiliyor...", rawError);
+    }
+  }
+
+  // AŞAMA 3: Yerel Yayın Klasörü (En son çare, Pages derlemesi bitmiş önbellek sürümü)
+  try {
+    console.log("Aşama 3: Yerel data.json dosyasından veri okunuyor...");
+    const response = await fetch(`${LOCAL_DATA_FALLBACK}?t=${Date.now()}`);
+    if (response.ok) {
+      appState = await response.json();
+      renderDashboardView();
+    } else {
+      throw new Error("Yerel dosya okunamadı.");
+    }
+  } catch (error) {
+    console.error("Tüm veri çekme yolları başarısız oldu:", error);
+    // Çevrimdışı kurtarma modunda statik randevuları yükle
     appState = JSON.parse(JSON.stringify(DEFAULT_FALLBACK_STATE));
     renderDashboardView();
-    showToast("⚠️ Güncel veriler yüklenemedi. Önbellekteki program gösteriliyor.", "error");
+    showToast("⚠️ Güncel verilere ulaşılamadı. Önbellekteki sürüm yükleniyor.", "error");
   }
 }
 
@@ -192,7 +223,7 @@ async function loadData() {
 function renderDashboardView() {
   // 1. Günün Mesajını Yaz
   const msgTextEl = document.getElementById("daily-message-text");
-  msgTextEl.innerHTML = appState.dailyMessage || "Huzurlu ve güzel bir day dilerim. ❤️";
+  msgTextEl.innerHTML = appState.dailyMessage || "Huzurlu ve güzel bir gün dilerim. ❤️";
 
   // 2. Randevuları ve Zaman Çizelgesini Oluştur
   const timelineEl = document.getElementById("care-timeline");
