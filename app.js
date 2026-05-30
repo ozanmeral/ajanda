@@ -325,12 +325,13 @@ function renderDashboardView() {
           return `
             <article class="glass-card timeline-card card-${apt.category}" role="listitem">
               <div class="timeline-time-box">
-                <span class="timeline-weekday">${escapeHTML(capitalizeTurkish(weekdayStr))}</span>
-                <span class="timeline-date-day">${dayNum}</span>
-                <span class="timeline-date-month">${escapeHTML(monthStr)}</span>
+                <div class="timeline-date-block">
+                  <span class="timeline-date-primary">${dayNum} ${escapeHTML(monthStr)}</span>
+                  <span class="timeline-weekday">${escapeHTML(capitalizeTurkish(weekdayStr))}</span>
+                </div>
                 <span class="timeline-date-time">
                   <span class="timeline-time-label">Saat</span>
-                  ${escapeHTML(apt.time)}
+                  <span class="timeline-time-value">${escapeHTML(apt.time)}</span>
                 </span>
                 ${relativeBadge}
               </div>
