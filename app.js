@@ -1,7 +1,7 @@
 /* ==========================================================================
    Günlük Takip Paneli - Dinamik Kontrol Kodları (Türkçe Genel Sürüm)
    Özellikler: Dinamik takvim oluşturma, yerel günlük ilaç takibi,
-   GitHub API REST istemcisi ve otomatik depo keşfi.
+   GitHub API REST istemcisi, otomatik depo keşfi ve randevu düzenleme.
    ========================================================================== */
 
 // --- Varsayılan Bellek Durumu (Yerel dosya okuma hatalarında yedek olarak kullanılır) ---
@@ -57,6 +57,9 @@ let appState = {
   appointments: [],
   contacts: []
 };
+
+// Düzenleme modunda olan randevunun ID'sini tutar
+let editingAppointmentId = null;
 
 // Yerel depolamadan alınan GitHub yapılandırması
 let ghConfig = {
@@ -139,7 +142,6 @@ function getRepositoryDetails() {
 }
 
 // --- ÜÇ AŞAMALI AKILLI VE GECİKMESİZ YÜKLEYİCİ ---
-// Bu fonksiyon hem GitHub Pages derleme gecikmelerini (1-2 dk) hem de CDN önbelleğini baypas eder.
 async function loadData() {
   const { owner, repo } = getRepositoryDetails();
   
@@ -154,7 +156,6 @@ async function loadData() {
   if (owner && repo) {
     
     // AŞAMA 1: Doğrudan GitHub API ile Ham İçerik Çekimi (Gecikme Süresi: 0 Saniye!)
-    // Bu sayede siz telefondan kaydettiğiniz an, annenizin ekranına güncelleme anında yansır.
     try {
       const apiFetchUrl = `https://api.github.com/repos/${repo}/contents/data.json`;
       
@@ -165,7 +166,6 @@ async function loadData() {
         "Expires": "0"
       };
 
-      // Eğer telefondan görüntülüyorsak ve Erişim Anahtarı varsa, Rate Limit'e takılmamak için ekleyelim
       if (ghConfig.token) {
         headers["Authorization"] = `token ${ghConfig.token}`;
       }
@@ -515,6 +515,11 @@ function renderAdminAppointmentsTable() {
           <span class="text-muted" style="font-size:0.8rem;">${escapeHTML(apt.location || "")}</span>
         </td>
         <td>
+          <!-- Düzenleme Butonu (Yeni eklenen kalem simgesi) -->
+          <button class="btn-edit-row" onclick="startEditAppointment('${apt.id}')" title="Randevuyu Düzenle" aria-label="Randevuyu Düzenle">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </button>
+          <!-- Silme Butonu -->
           <button class="btn-delete-row" onclick="deleteAppointment('${apt.id}')" title="Randevuyu Sil" aria-label="Randevuyu Sil">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
           </button>
@@ -575,7 +580,7 @@ async function pushDataToGitHub(updatedState, successMessage) {
   const apiUrl = `https://api.github.com/repos/${repo}/contents/data.json`;
   
   try {
-    // 1. Güncel dosya bilgilerini çek (Dosyayı ezebilmek için 'sha' değerini almak şart)
+    // 1. Get the current file details (need the 'sha' hash to overwrite file in Git)
     const getResponse = await fetch(apiUrl, {
       headers: {
         "Authorization": `token ${ghConfig.token}`,
@@ -592,9 +597,8 @@ async function pushDataToGitHub(updatedState, successMessage) {
       throw new Error(`Dosya kontrol hatası: ${getResponse.statusText}`);
     }
 
-    // 2. Güncelleme isteğini gönder (PUT)
+    // 2. Perform the update/write (PUT)
     const jsonString = JSON.stringify(updatedState, null, 2);
-    // Emojilerin düzgün kaydedilmesi için UTF-8 destekli base64 şifreleme kullan
     const base64Content = btoa(unescape(encodeURIComponent(jsonString)));
 
     const putResponse = await fetch(apiUrl, {
@@ -616,7 +620,7 @@ async function pushDataToGitHub(updatedState, successMessage) {
       throw new Error(errBody.message || "Yazma hatası");
     }
 
-    // 3. Eşitleme başarılı: belleği güncelle ve başarı mesajı göster
+    // 3. Update memory state & show beautiful success notification
     appState = updatedState;
     showToast(successMessage || "✅ Güncelleme başarıyla kaydedildi!", "success");
     return true;
@@ -629,7 +633,7 @@ async function pushDataToGitHub(updatedState, successMessage) {
 
 // --- Eylemler & Form Kontrolleri ---
 
-// Randevu Ekleme
+// Randevu Ekleme ve DÜZENLEME İşlemi
 async function handleAddAppointment(e) {
   e.preventDefault();
   const btn = document.getElementById("btn-save-appointment");
@@ -644,34 +648,107 @@ async function handleAddAppointment(e) {
 
   if (!title || !date || !time) return;
 
-  const newApt = {
-    id: `apt-${Date.now()}`,
-    title,
-    date,
-    time,
-    category,
-    doctor: doctor || undefined,
-    location: location || undefined,
-    notes: notes || undefined
-  };
+  let updatedState;
+  let successMsg = "✅ Randevu başarıyla eklendi!";
 
-  const updatedState = {
-    ...appState,
-    appointments: [...(appState.appointments || []), newApt]
-  };
+  if (editingAppointmentId) {
+    // DÜZENLEME MODU: Mevcut randevuyu haritalayarak güncelle
+    successMsg = "✅ Randevu başarıyla güncellendi!";
+    const updatedAppointments = appState.appointments.map(apt => {
+      if (apt.id === editingAppointmentId) {
+        return {
+          id: apt.id, // ID değişmez
+          title,
+          date,
+          time,
+          category,
+          doctor: doctor || undefined,
+          location: location || undefined,
+          notes: notes || undefined
+        };
+      }
+      return apt;
+    });
+
+    updatedState = {
+      ...appState,
+      appointments: updatedAppointments
+    };
+  } else {
+    // EKLEME MODU: Yeni randevu ekle
+    const newApt = {
+      id: `apt-${Date.now()}`,
+      title,
+      date,
+      time,
+      category,
+      doctor: doctor || undefined,
+      location: location || undefined,
+      notes: notes || undefined
+    };
+
+    updatedState = {
+      ...appState,
+      appointments: [...(appState.appointments || []), newApt]
+    };
+  }
 
   btn.classList.add("btn-loading");
-  const success = await pushDataToGitHub(updatedState, "✅ Randevu başarıyla eklendi!");
+  const success = await pushDataToGitHub(updatedState, successMsg);
   btn.classList.remove("btn-loading");
 
   if (success) {
-    document.getElementById("appointment-form").reset();
+    cancelEditAppointment();
     renderAdminView();
   }
 }
 
+// Randevu Düzenlemeyi Başlatma (Formu doldur ve düzenleme moduna al)
+function startEditAppointment(id) {
+  const apt = appState.appointments.find(a => a.id === id);
+  if (!apt) return;
+
+  editingAppointmentId = id;
+
+  // Form alanlarını doldur
+  document.getElementById("apt-title").value = apt.title || "";
+  document.getElementById("apt-date").value = apt.date || "";
+  document.getElementById("apt-time").value = apt.time || "";
+  document.getElementById("apt-category").value = apt.category || "consultation";
+  document.getElementById("apt-doctor").value = apt.doctor || "";
+  document.getElementById("apt-location").value = apt.location || "";
+  document.getElementById("apt-notes").value = apt.notes || "";
+
+  // Görsel buton ayarlarını güncelle
+  document.getElementById("btn-save-appointment-text").textContent = "Değişiklikleri Kaydet";
+  document.getElementById("btn-cancel-edit").style.display = "inline-flex";
+
+  // Form başlığını ve form alanını odakla
+  const formCard = document.querySelector(".editor-card");
+  if (formCard) {
+    formCard.scrollIntoView({ behavior: "smooth" });
+  }
+  
+  showToast("✍️ Randevu düzenleme moduna alındı.", "info");
+}
+
+// Randevu Düzenlemeyi İptal Etme
+function cancelEditAppointment() {
+  editingAppointmentId = null;
+  document.getElementById("appointment-form").reset();
+
+  // Butonları varsayılana döndür
+  document.getElementById("btn-save-appointment-text").textContent = "Randevuyu Ekle";
+  document.getElementById("btn-cancel-edit").style.display = "none";
+}
+
 // Randevu Silme
 async function deleteAppointment(id) {
+  // Eğer silinecek randevu şu an düzenleniyorsa önce düzenlemeyi iptal et
+  if (editingAppointmentId === id) {
+    cancelEditAppointment();
+  }
+
   if (!confirm("Bu randevuyu silmek istediğinizden emin misiniz?")) return;
 
   const updatedState = {
@@ -822,10 +899,16 @@ function setupEventListeners() {
     });
   }
 
-  // Randevu ekleme formu gönderimi
+  // Randevu ekleme formu gönderimi (Düzenleme modunu da kapsar)
   const aptForm = document.getElementById("appointment-form");
   if (aptForm) {
     aptForm.addEventListener("submit", handleAddAppointment);
+  }
+
+  // Randevu Düzenlemeyi İptal Etme butonu
+  const cancelEditBtn = document.getElementById("btn-cancel-edit");
+  if (cancelEditBtn) {
+    cancelEditBtn.addEventListener("click", cancelEditAppointment);
   }
 
   // Mesaj formu gönderimi
@@ -904,5 +987,7 @@ function showToast(message, type = "success") {
 
 // onclick nitelikleri için fonksiyonları küresel pencere nesnesine bağla
 window.deleteAppointment = deleteAppointment;
+window.startEditAppointment = startEditAppointment;
+window.cancelEditAppointment = cancelEditAppointment;
 window.deleteMedication = deleteMedication;
 window.deleteContact = deleteContact;

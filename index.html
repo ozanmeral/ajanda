@@ -181,9 +181,10 @@
                 <textarea id="apt-notes" rows="3" placeholder="Örn: Aç karnına gidilecek. Giriş belgesini yanınıza alın."></textarea>
               </div>
 
-              <div class="form-actions full-width">
+              <div class="form-actions full-width" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button type="button" id="btn-cancel-edit" class="btn btn-secondary" style="display: none;">İptal Et</button>
                 <button type="submit" id="btn-save-appointment" class="btn btn-primary">
-                  <span>Randevuyu Ekle</span>
+                  <span id="btn-save-appointment-text">Randevuyu Ekle</span>
                 </button>
               </div>
             </form>
