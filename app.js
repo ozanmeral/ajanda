@@ -73,6 +73,7 @@ const LOCAL_DATA_FALLBACK = "data.json";
 // --- Uygulama Başlatma ---
 document.addEventListener("DOMContentLoaded", () => {
   initRouter();
+  renderTodaySummary();
   loadData();
   setupEventListeners();
   checkMedicationDateReset();
@@ -272,82 +273,110 @@ function renderDashboardView() {
     return;
   }
 
-  // Randevu kartlarını render et
-  timelineEl.innerHTML = sortedApts.map(apt => {
-    // Relative date labels (Bugün, Yarın, X gün sonra)
-    const diffTime = apt.parsedDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    let relativeBadge = "";
-    if (diffDays === 0) {
-      relativeBadge = `<span class="timeline-relative-badge badge-today">Bugün</span>`;
-    } else if (diffDays === 1) {
-      relativeBadge = `<span class="timeline-relative-badge badge-tomorrow">Yarın</span>`;
-    } else if (diffDays > 1 && diffDays <= 7) {
-      relativeBadge = `<span class="timeline-relative-badge">${diffDays} gün sonra</span>`;
+  const groupedApts = sortedApts.reduce((groups, apt) => {
+    if (!groups.has(apt.date)) {
+      groups.set(apt.date, []);
     }
+    groups.get(apt.date).push(apt);
+    return groups;
+  }, new Map());
 
-    // Türkçe takvim biçimlendirmesi
-    const dayNum = apt.parsedDate.getDate();
-    const monthStr = apt.parsedDate.toLocaleString("tr-TR", { month: "short" });
-
-    // Kategori etiketleri
-    let categoryLabel = "Planlı İşlem";
-    let icon = "🩺";
-    if (apt.category === "treatment") {
-      categoryLabel = "Planlı Uygulama";
-      icon = "🧪";
-    } else if (apt.category === "consultation") {
-      categoryLabel = "Doktor Kontrolü";
-      icon = "🩺";
-    } else if (apt.category === "scan") {
-      categoryLabel = "Tahlil & Görüntüleme";
-      icon = "📸";
-    }
+  // Randevu kartlarını gün grupları halinde render et
+  timelineEl.innerHTML = Array.from(groupedApts.values()).map(group => {
+    const firstApt = group[0];
+    const groupDate = firstApt.parsedDate;
+    const weekdayStr = groupDate.toLocaleString("tr-TR", { weekday: "long" });
+    const dayNum = groupDate.getDate();
+    const monthStr = groupDate.toLocaleString("tr-TR", { month: "long" });
+    const yearStr = groupDate.getFullYear();
+    const groupRelative = getRelativeDayInfo(groupDate, today).label;
+    const appointmentText = `${group.length} randevu var`;
 
     return `
-      <article class="glass-card timeline-card card-${apt.category}" role="listitem">
-        <div class="timeline-time-box">
-          <span class="timeline-date-day">${dayNum}</span>
-          <span class="timeline-date-month">${monthStr}</span>
-          <span class="timeline-date-time">${escapeHTML(apt.time)}</span>
-          ${relativeBadge}
-        </div>
-        
-        <div class="timeline-body">
-          <div class="timeline-category-container">
-            <span class="timeline-category-tag tag-${apt.category}">${icon} ${categoryLabel}</span>
+      <section class="timeline-day-group" aria-label="${escapeHTML(capitalizeTurkish(weekdayStr))} günü ${appointmentText}">
+        <div class="timeline-day-divider">
+          <div>
+            <h3>${escapeHTML(capitalizeTurkish(weekdayStr))} günü ${appointmentText}</h3>
+            <p>${dayNum} ${escapeHTML(monthStr)} ${yearStr}${groupRelative ? ` · ${groupRelative}` : ""}</p>
           </div>
-          <h3 class="timeline-title">${escapeHTML(apt.title)}</h3>
-          
-          <div class="timeline-meta">
-            ${apt.doctor ? `
-              <div class="meta-row">
-                <span class="meta-icon" aria-hidden="true">🩺</span>
-                <span><strong>Uzman:</strong> ${escapeHTML(apt.doctor)}</span>
-              </div>
-            ` : ""}
-            ${apt.location ? `
-              <div class="meta-row">
-                <span class="meta-icon" aria-hidden="true">📍</span>
-                <span>
-                  <strong>Konum:</strong> 
-                  <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(apt.location)}" target="_blank" rel="noopener">
-                    ${escapeHTML(apt.location)} ↗
-                  </a>
+          <span class="timeline-day-count">${group.length}</span>
+        </div>
+        ${group.map(apt => {
+          const dayInfo = getRelativeDayInfo(apt.parsedDate, today);
+          const relativeBadge = dayInfo.label
+            ? `<span class="timeline-relative-badge ${dayInfo.badgeClass}">${escapeHTML(dayInfo.label)}</span>`
+            : "";
+
+          // Türkçe takvim biçimlendirmesi
+          const dayNum = apt.parsedDate.getDate();
+          const weekdayStr = apt.parsedDate.toLocaleString("tr-TR", { weekday: "long" });
+          const monthStr = apt.parsedDate.toLocaleString("tr-TR", { month: "long" });
+          const yearStr = apt.parsedDate.getFullYear();
+
+          // Kategori etiketleri
+          let categoryLabel = "Planlı İşlem";
+          let icon = "🩺";
+          if (apt.category === "treatment") {
+            categoryLabel = "Planlı Uygulama";
+            icon = "🧪";
+          } else if (apt.category === "consultation") {
+            categoryLabel = "Doktor Kontrolü";
+            icon = "🩺";
+          } else if (apt.category === "scan") {
+            categoryLabel = "Tahlil & Görüntüleme";
+            icon = "📸";
+          }
+
+          return `
+            <article class="glass-card timeline-card card-${apt.category}" role="listitem">
+              <div class="timeline-time-box">
+                <span class="timeline-weekday">${escapeHTML(capitalizeTurkish(weekdayStr))}</span>
+                <span class="timeline-date-day">${dayNum}</span>
+                <span class="timeline-date-month">${escapeHTML(monthStr)} ${yearStr}</span>
+                <span class="timeline-date-time">
+                  <span class="timeline-time-label">Saat</span>
+                  ${escapeHTML(apt.time)}
                 </span>
+                ${relativeBadge}
               </div>
-            ` : ""}
-          </div>
-          
-          ${apt.notes ? `
-            <div class="timeline-notes">
-              <strong>Notlar & Hatırlatmalar:</strong><br>
-              ${escapeHTML(apt.notes).replace(/\n/g, "<br>")}
-            </div>
-          ` : ""}
-        </div>
-      </article>
+
+              <div class="timeline-body">
+                <div class="timeline-category-container">
+                  <span class="timeline-category-tag tag-${apt.category}">${icon} ${categoryLabel}</span>
+                </div>
+                <h3 class="timeline-title">${escapeHTML(apt.title)}</h3>
+
+                <div class="timeline-meta">
+                  ${apt.doctor ? `
+                    <div class="meta-row">
+                      <span class="meta-icon" aria-hidden="true">🩺</span>
+                      <span><strong>Uzman:</strong> ${escapeHTML(apt.doctor)}</span>
+                    </div>
+                  ` : ""}
+                  ${apt.location ? `
+                    <div class="meta-row">
+                      <span class="meta-icon" aria-hidden="true">📍</span>
+                      <span>
+                        <strong>Konum:</strong>
+                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(apt.location)}" target="_blank" rel="noopener">
+                          ${escapeHTML(apt.location)} ↗
+                        </a>
+                      </span>
+                    </div>
+                  ` : ""}
+                </div>
+
+                ${apt.notes ? `
+                  <div class="timeline-notes">
+                    <strong>Notlar & Hatırlatmalar:</strong><br>
+                    ${escapeHTML(apt.notes).replace(/\n/g, "<br>")}
+                  </div>
+                ` : ""}
+              </div>
+            </article>
+          `;
+        }).join("")}
+      </section>
     `;
   }).join("");
 
@@ -959,6 +988,40 @@ function getTodayDateString() {
   const day = "" + d.getDate();
   const year = d.getFullYear();
   return [year, month.padStart(2, "0"), day.padStart(2, "0")].join("-");
+}
+
+function renderTodaySummary() {
+  const todaySummaryEl = document.getElementById("today-summary");
+  if (!todaySummaryEl) return;
+
+  const today = new Date();
+  const weekday = capitalizeTurkish(today.toLocaleString("tr-TR", { weekday: "long" }));
+  const day = today.getDate();
+  const month = today.toLocaleString("tr-TR", { month: "long" });
+  const year = today.getFullYear();
+
+  todaySummaryEl.textContent = `Bugün: ${weekday}, ${day} ${month} ${year}`;
+}
+
+function getRelativeDayInfo(date, today) {
+  const diffTime = date.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    return { label: "Bugün", badgeClass: "badge-today" };
+  }
+  if (diffDays === 1) {
+    return { label: "Yarın", badgeClass: "badge-tomorrow" };
+  }
+  if (diffDays > 1 && diffDays <= 7) {
+    return { label: `${diffDays} gün sonra`, badgeClass: "" };
+  }
+  return { label: "", badgeClass: "" };
+}
+
+function capitalizeTurkish(str) {
+  if (!str) return "";
+  return str.charAt(0).toLocaleUpperCase("tr-TR") + str.slice(1);
 }
 
 // Geri bildirim bildirim pencereleri (Toast)
