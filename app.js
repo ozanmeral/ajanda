@@ -282,7 +282,7 @@ function renderDashboardView() {
   }, new Map());
 
   // Randevu kartlarını gün grupları halinde render et
-  timelineEl.innerHTML = Array.from(groupedApts.values()).map(group => {
+  timelineEl.innerHTML = Array.from(groupedApts.values()).map((group, groupIndex) => {
     const firstApt = group[0];
     const groupDate = firstApt.parsedDate;
     const weekdayStr = groupDate.toLocaleString("tr-TR", { weekday: "long" });
@@ -293,7 +293,7 @@ function renderDashboardView() {
     const appointmentText = `${group.length} randevu var`;
 
     return `
-      <section class="timeline-day-group" aria-label="${escapeHTML(capitalizeTurkish(weekdayStr))} günü ${appointmentText}">
+      <section class="timeline-day-group day-theme-${groupIndex % 5}" aria-label="${escapeHTML(capitalizeTurkish(weekdayStr))} günü ${appointmentText}">
         <div class="timeline-day-divider">
           <div>
             <h3>${escapeHTML(capitalizeTurkish(weekdayStr))} günü ${appointmentText}</h3>
