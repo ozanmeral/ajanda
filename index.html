@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=1.2.1">
+  <link rel="stylesheet" href="styles.css?v=1.2.2">
 </head>
 <body>
 
@@ -31,7 +31,7 @@
   <!-- VIEW 1: Main Care Dashboard (Visible by default) -->
   <main id="view-dashboard" class="app-view active" aria-labelledby="app-title">
 
-    <section id="appointment-calendar-card" class="glass-card calendar-card" aria-label="Randevu takvimi">
+    <section id="appointment-calendar-card" class="glass-card calendar-card" aria-label="Randevu takvimi" hidden>
       <div class="calendar-header">
         <div>
           <span id="calendar-today-label" class="badge">Bugün</span>
@@ -84,7 +84,7 @@
         </div>
 
         <!-- Hotlines / Care Circle Contacts -->
-        <div class="glass-card contacts-card">
+        <div class="glass-card contacts-card" hidden>
           <h3>Önemli Telefonlar</h3>
           <p class="card-subtitle text-muted">Aramak istediğiniz numaranın üzerine dokunmanız yeterlidir:</p>
           
@@ -297,6 +297,6 @@
     <span id="toast-message">İşlem yapılıyor</span>
   </div>
 
-  <script src="app.js?v=1.2.1"></script>
+  <script src="app.js?v=1.2.2"></script>
 </body>
 </html>

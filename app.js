@@ -60,6 +60,7 @@ let appState = {
 
 // Düzenleme modunda olan randevunun ID'sini tutar
 let editingAppointmentId = null;
+let appointmentCountdownTimer = null;
 
 const CONFIRMATION_STATUS = {
   PENDING: "pending",
@@ -237,6 +238,7 @@ function renderDashboardView() {
   const countEl = document.getElementById("appointment-count");
   
   if (!appState.appointments || appState.appointments.length === 0) {
+    stopAppointmentCountdowns();
     renderAppointmentCalendar([], new Date());
     timelineEl.innerHTML = `
       <div class="empty-state">
@@ -257,7 +259,8 @@ function renderDashboardView() {
     .map(apt => ({
       ...apt,
       confirmationStatus: normalizeConfirmationStatus(apt.confirmationStatus),
-      parsedDate: parseAppointmentDate(apt.date)
+      parsedDate: parseAppointmentDate(apt.date),
+      parsedDateTime: createAppointmentDateTime(apt.date, apt.time)
     }))
     .filter(apt => isAppointmentVisibleOnDashboard(apt.parsedDate, today))
     .sort((a, b) => {
@@ -270,6 +273,7 @@ function renderDashboardView() {
   countEl.textContent = `${sortedApts.length} randevu`;
 
   if (sortedApts.length === 0) {
+    stopAppointmentCountdowns();
     renderAppointmentCalendar([], today);
     timelineEl.innerHTML = `
       <div class="empty-state">
@@ -313,10 +317,8 @@ function renderDashboardView() {
           <span class="timeline-day-count">${group.length}</span>
         </div>
         ${group.map(apt => {
-          const dayInfo = getRelativeDayInfo(apt.parsedDate, today);
-          const relativeBadge = dayInfo.label
-            ? `<span class="timeline-relative-badge ${dayInfo.badgeClass}">${escapeHTML(dayInfo.label)}</span>`
-            : "";
+          const appointmentDateTime = apt.parsedDateTime || createAppointmentDateTime(apt.date, apt.time);
+          const countdownTarget = appointmentDateTime.toISOString();
 
           // Türkçe takvim biçimlendirmesi
           const dayNum = apt.parsedDate.getDate();
@@ -355,7 +357,9 @@ function renderDashboardView() {
                   <span class="timeline-time-label">Saat</span>
                   <span class="timeline-time-value">${escapeHTML(apt.time)}</span>
                 </span>
-                ${relativeBadge}
+                <span class="timeline-relative-badge appointment-countdown" data-countdown-target="${escapeHTML(countdownTarget)}" aria-live="polite">
+                  Hesaplanıyor...
+                </span>
               </div>
 
               <div class="timeline-body">
@@ -404,6 +408,8 @@ function renderDashboardView() {
       </section>
     `;
   }).join("");
+
+  startAppointmentCountdowns();
 
   // 3. İlaç listesini render et
   renderMedicationChecklist();
@@ -1326,6 +1332,48 @@ function getRelativeDayInfo(date, today) {
     return { label: `${diffDays} gün sonra`, badgeClass: "" };
   }
   return { label: "", badgeClass: "" };
+}
+
+function startAppointmentCountdowns() {
+  stopAppointmentCountdowns();
+
+  updateAppointmentCountdowns();
+  appointmentCountdownTimer = setInterval(updateAppointmentCountdowns, 1000);
+}
+
+function stopAppointmentCountdowns() {
+  if (!appointmentCountdownTimer) return;
+  clearInterval(appointmentCountdownTimer);
+  appointmentCountdownTimer = null;
+}
+
+function updateAppointmentCountdowns() {
+  document.querySelectorAll("[data-countdown-target]").forEach(el => {
+    const target = new Date(el.getAttribute("data-countdown-target"));
+    if (Number.isNaN(target.getTime())) return;
+
+    el.textContent = formatAppointmentCountdown(target, new Date());
+  });
+}
+
+function formatAppointmentCountdown(target, now) {
+  const diffMs = target.getTime() - now.getTime();
+
+  if (diffMs <= 0) {
+    return "Randevu zamanı geldi";
+  }
+
+  const totalMinutes = Math.ceil(diffMs / (1000 * 60));
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  const parts = [];
+
+  if (days > 0) parts.push(`${days} gün`);
+  if (hours > 0) parts.push(`${hours} saat`);
+  if (minutes > 0 || parts.length === 0) parts.push(`${minutes} dk`);
+
+  return `${parts.join(" ")} kaldı`;
 }
 
 function capitalizeTurkish(str) {
