@@ -30,6 +30,7 @@
       "date": "2026-06-03",
       "time": "14:00",
       "category": "consultation",
+      "confirmationStatus": "confirmed",
       "doctor": "Uzm. Dr. Meliha Zengin Eroğlu",
       "location": "Sultan Abdülhamid Han Eğitim ve Araştırma Hastanesi",
       "notes": "Rutin destek ve takip görüşmesi."
