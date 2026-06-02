@@ -19,6 +19,7 @@
       "date": "2026-06-03",
       "time": "10:00",
       "category": "consultation",
+      "confirmationStatus": "confirmed",
       "doctor": "Uzm. Dr. Derya Özyiğitoğlu",
       "location": "Sultan Abdülhamid Han Eğitim ve Araştırma Hastanesi",
       "notes": "Rutin uzman kontrolü. Son yapılan tetkik sonuçlarınızı yanınızda bulundurabilirsiniz."
