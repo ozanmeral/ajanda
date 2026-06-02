@@ -1,5 +1,4 @@
 {
-  "dailyMessage": "Günaydın! Bugünün senin için huzurlu, rahat ve çok güzel geçmesini diliyorum. Kendini yorma, bol bol dinlen. Seni çok seviyorum. ❤️ — Ozan",
   "medications": [],
   "appointments": [
     {
@@ -35,6 +34,5 @@
       "location": "Sultan Abdülhamid Han Eğitim ve Araştırma Hastanesi",
       "notes": "Rutin destek ve takip görüşmesi."
     }
-  ],
-  "contacts": []
+  ]
 }

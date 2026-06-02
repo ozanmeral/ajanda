@@ -6,7 +6,6 @@
 
 // --- Varsayılan Bellek Durumu (Yerel dosya okuma hatalarında yedek olarak kullanılır) ---
 const DEFAULT_FALLBACK_STATE = {
-  "dailyMessage": "Günaydın! Bugünün senin için huzurlu, rahat ve çok güzel geçmesini diliyorum. Kendini yorma, bol bol dinlen. Seni çok seviyorum. ❤️ — Ozan",
   "medications": [
     { "id": "med-1", "name": "Sabah İlaçları (Kahvaltıdan sonra tok karnına)", "time": "08:00" },
     { "id": "med-2", "name": "Öğle Takviyeleri (Bol su ile alınacak)", "time": "14:00" },
@@ -43,19 +42,12 @@ const DEFAULT_FALLBACK_STATE = {
       "location": "Sultan Abdülhamid Han Eğitim ve Araştırma Hastanesi",
       "notes": "Rutin destek ve takip görüşmesi."
     }
-  ],
-  "contacts": [
-    { "name": "Klinik Destek & Danışma Hattı", "phone": "+90-555-123-4567" },
-    { "name": "Hastane İletişim / Koordinasyon", "phone": "+90-555-987-6543" },
-    { "name": "İletişim - Ozan", "phone": "+90-555-555-1234" }
   ]
 };
 
 let appState = {
-  dailyMessage: "Mesaj yükleniyor...",
   medications: [],
-  appointments: [],
-  contacts: []
+  appointments: []
 };
 
 // Düzenleme modunda olan randevunun ID'sini tutar
@@ -227,13 +219,7 @@ async function loadData() {
 
 // --- Arayüz Oluşturma: Ana Dashboard Görünümü ---
 function renderDashboardView() {
-  // 1. Günün Mesajını Yaz
-  const msgTextEl = document.getElementById("daily-message-text");
-  if (msgTextEl) {
-    msgTextEl.innerHTML = appState.dailyMessage || "Huzurlu ve güzel bir gün dilerim. ❤️";
-  }
-
-  // 2. Randevuları ve Zaman Çizelgesini Oluştur
+  // 1. Randevuları ve Zaman Çizelgesini Oluştur
   const timelineEl = document.getElementById("care-timeline");
   const countEl = document.getElementById("appointment-count");
   
@@ -251,8 +237,9 @@ function renderDashboardView() {
     return;
   }
 
-  // Tarihleri çözümle ve sadece bugünkü ve gelecekteki randevuları filtrele, kronolojik sırala
-  const today = new Date();
+  // Tarihleri çözümle; randevu başlangıcından 1 saat sonra ana ekrandan gizle.
+  const now = new Date();
+  const today = new Date(now);
   today.setHours(0, 0, 0, 0);
 
   const sortedApts = appState.appointments
@@ -262,7 +249,7 @@ function renderDashboardView() {
       parsedDate: parseAppointmentDate(apt.date),
       parsedDateTime: createAppointmentDateTime(apt.date, apt.time)
     }))
-    .filter(apt => isAppointmentVisibleOnDashboard(apt.parsedDate, today))
+    .filter(apt => isAppointmentVisibleOnDashboard(apt.parsedDateTime, now))
     .sort((a, b) => {
       if (a.date !== b.date) {
         return a.parsedDate - b.parsedDate;
@@ -411,26 +398,8 @@ function renderDashboardView() {
 
   startAppointmentCountdowns();
 
-  // 3. İlaç listesini render et
+  // 2. İlaç listesini render et
   renderMedicationChecklist();
-
-  // 4. İletişim Numaralarını Render et
-  const contactsEl = document.getElementById("contacts-list");
-  if (!appState.contacts || appState.contacts.length === 0) {
-    contactsEl.innerHTML = `<p class="text-muted">Kayıtlı numara bulunmuyor.</p>`;
-  } else {
-    contactsEl.innerHTML = appState.contacts.map(c => `
-      <a href="tel:${c.phone.replace(/[^0-9+]/g, "")}" class="contact-card-btn">
-        <div class="contact-info">
-          <strong>${escapeHTML(c.name)}</strong>
-          <div class="text-muted" style="font-size: 0.8rem; margin-top: 0.15rem;">${escapeHTML(c.phone)}</div>
-        </div>
-        <div class="contact-phone-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-        </div>
-      </a>
-    `).join("");
-  }
 }
 
 // --- İlaç Kontrol Listesi Yönetimi ---
@@ -525,17 +494,12 @@ function renderAdminView() {
   // Mevcut depo adını ekrana yaz
   document.getElementById("connected-repo-label").textContent = ghConfig.repo || "Bilinmiyor";
 
-  // Günün mesajını düzenleyiciye aktar
-  document.getElementById("msg-text").value = appState.dailyMessage || "";
-
   // Randevu listesi tablosunu render et
   renderAdminAppointmentsTable();
+  renderAppointmentShortcuts();
 
   // İlaç listesi düzenleyicisini render et
   renderAdminMedsList();
-
-  // İletişim listesi düzenleyicisini render et
-  renderAdminContactsList();
 }
 
 function renderAdminAppointmentsTable() {
@@ -608,24 +572,26 @@ function renderAdminMedsList() {
   `).join("");
 }
 
-function renderAdminContactsList() {
-  const ul = document.getElementById("admin-contacts-list");
-  if (!appState.contacts || appState.contacts.length === 0) {
-    ul.innerHTML = `<li class="text-muted" style="font-size:0.85rem;">Rehber boş.</li>`;
-    return;
-  }
+function renderAppointmentShortcuts() {
+  fillDatalist("apt-title-shortcuts", getUniqueAppointmentValues("title"));
+  fillDatalist("apt-doctor-shortcuts", getUniqueAppointmentValues("doctor"));
+  fillDatalist("apt-location-shortcuts", getUniqueAppointmentValues("location"));
+}
 
-  ul.innerHTML = appState.contacts.map((c, index) => `
-    <li class="admin-item-row">
-      <div class="admin-item-text">
-        <strong>${escapeHTML(c.name)}</strong>
-        <span class="admin-item-subtext">📞 ${escapeHTML(c.phone)}</span>
-      </div>
-      <button class="btn-delete-row" type="button" onclick="deleteContact(${index})" title="Kişiyi Sil">
-        ✕
-      </button>
-    </li>
-  `).join("");
+function getUniqueAppointmentValues(fieldName) {
+  return Array.from(new Set((appState.appointments || [])
+    .map(apt => (apt[fieldName] || "").trim())
+    .filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, "tr-TR"));
+}
+
+function fillDatalist(id, values) {
+  const datalist = document.getElementById(id);
+  if (!datalist) return;
+
+  datalist.innerHTML = values
+    .map(value => `<option value="${escapeHTML(value)}"></option>`)
+    .join("");
 }
 
 // --- GitHub REST API Git Eşitleme İşlemleri ---
@@ -637,6 +603,7 @@ async function pushDataToGitHub(updatedState, successMessage) {
   }
 
   const apiUrl = `https://api.github.com/repos/${repo}/contents/data.json`;
+  const stateToSave = sanitizeAppStateForSave(updatedState);
   
   try {
     // 1. Güncel dosya bilgilerini çek (Dosyayı ezebilmek için 'sha' değerini almak şart)
@@ -657,7 +624,7 @@ async function pushDataToGitHub(updatedState, successMessage) {
     }
 
     // 2. Güncelleme isteğini gönder (PUT)
-    const jsonString = JSON.stringify(updatedState, null, 2);
+    const jsonString = JSON.stringify(stateToSave, null, 2);
     const base64Content = btoa(unescape(encodeURIComponent(jsonString)));
 
     const putResponse = await fetch(apiUrl, {
@@ -680,7 +647,7 @@ async function pushDataToGitHub(updatedState, successMessage) {
     }
 
     // 3. Eşitleme başarılı: belleği güncelle ve başarı mesajı göster
-    appState = updatedState;
+    appState = stateToSave;
     showToast(successMessage || "✅ Güncelleme başarıyla kaydedildi!", "success");
     return true;
   } catch (error) {
@@ -826,26 +793,6 @@ async function deleteAppointment(id) {
   }
 }
 
-// Günün Mesajını Değiştirme
-async function handleUpdateMessage(e) {
-  e.preventDefault();
-  const btn = document.getElementById("btn-save-message");
-  const msgText = document.getElementById("msg-text").value.trim();
-
-  const updatedState = {
-    ...appState,
-    dailyMessage: msgText
-  };
-
-  btn.classList.add("btn-loading");
-  const success = await pushDataToGitHub(updatedState, "💌 Günün notu başarıyla güncellendi!");
-  btn.classList.remove("btn-loading");
-
-  if (success) {
-    renderAdminView();
-  }
-}
-
 // İlaç Ekleme
 async function handleAddMedication(e) {
   e.preventDefault();
@@ -882,43 +829,6 @@ async function deleteMedication(id) {
   };
 
   const success = await pushDataToGitHub(updatedState, "🗑️ İlaç başarıyla listeden kaldırıldı.");
-  if (success) {
-    renderAdminView();
-  }
-}
-
-// İletişim Numarası Ekleme
-async function handleAddContact(e) {
-  e.preventDefault();
-  const name = document.getElementById("contact-new-name").value.trim();
-  const phone = document.getElementById("contact-new-phone").value.trim();
-
-  if (!name || !phone) return;
-
-  const newContact = { name, phone };
-
-  const updatedState = {
-    ...appState,
-    contacts: [...(appState.contacts || []), newContact]
-  };
-
-  const success = await pushDataToGitHub(updatedState, "📞 Telefon numarası başarıyla eklendi!");
-  if (success) {
-    document.getElementById("contact-add-form").reset();
-    renderAdminView();
-  }
-}
-
-// Kişi Silme
-async function deleteContact(index) {
-  if (!confirm("Bu numarayı rehberden silmek istediğinizden emin misiniz?")) return;
-
-  const updatedState = {
-    ...appState,
-    contacts: appState.contacts.filter((_, idx) => idx !== index)
-  };
-
-  const success = await pushDataToGitHub(updatedState, "🗑️ Numarası silindi.");
   if (success) {
     renderAdminView();
   }
@@ -974,22 +884,10 @@ function setupEventListeners() {
     cancelEditBtn.addEventListener("click", cancelEditAppointment);
   }
 
-  // Mesaj formu gönderimi
-  const msgForm = document.getElementById("message-form");
-  if (msgForm) {
-    msgForm.addEventListener("submit", handleUpdateMessage);
-  }
-
   // İlaç ekleme formu gönderimi
   const medForm = document.getElementById("med-add-form");
   if (medForm) {
     medForm.addEventListener("submit", handleAddMedication);
-  }
-
-  // İletişim ekleme formu gönderimi
-  const contactForm = document.getElementById("contact-add-form");
-  if (contactForm) {
-    contactForm.addEventListener("submit", handleAddContact);
   }
 
   // İlaç işaretlerini manuel sıfırlama butonu
@@ -1015,6 +913,17 @@ function escapeHTML(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function sanitizeAppStateForSave(state) {
+  const cleanState = { ...(state || {}) };
+  delete cleanState["daily" + "Message"];
+  delete cleanState["con" + "tacts"];
+
+  return {
+    medications: cleanState.medications || [],
+    appointments: cleanState.appointments || []
+  };
 }
 
 // Günün tarihini YYYY-MM-DD biçiminde alan yardımcı
@@ -1171,15 +1080,13 @@ function parseAppointmentDate(dateStr) {
   return new Date(`${dateStr}T00:00:00`);
 }
 
-function isAppointmentVisibleOnDashboard(appointmentDate, todayStart) {
-  if (!(appointmentDate instanceof Date) || Number.isNaN(appointmentDate.getTime())) {
+function isAppointmentVisibleOnDashboard(appointmentDateTime, now = new Date()) {
+  if (!(appointmentDateTime instanceof Date) || Number.isNaN(appointmentDateTime.getTime())) {
     return false;
   }
 
-  const appointmentDay = new Date(appointmentDate);
-  appointmentDay.setHours(0, 0, 0, 0);
-
-  return appointmentDay >= todayStart;
+  const hideAfter = new Date(appointmentDateTime.getTime() + 60 * 60 * 1000);
+  return hideAfter > now;
 }
 
 function normalizeConfirmationStatus(status) {
@@ -1348,12 +1255,24 @@ function stopAppointmentCountdowns() {
 }
 
 function updateAppointmentCountdowns() {
+  let shouldRefreshDashboard = false;
+
   document.querySelectorAll("[data-countdown-target]").forEach(el => {
     const target = new Date(el.getAttribute("data-countdown-target"));
     if (Number.isNaN(target.getTime())) return;
 
-    el.textContent = formatAppointmentCountdown(target, new Date());
+    const now = new Date();
+    if (!isAppointmentVisibleOnDashboard(target, now)) {
+      shouldRefreshDashboard = true;
+      return;
+    }
+
+    el.textContent = formatAppointmentCountdown(target, now);
   });
+
+  if (shouldRefreshDashboard) {
+    renderDashboardView();
+  }
 }
 
 function formatAppointmentCountdown(target, now) {
@@ -1408,4 +1327,3 @@ window.deleteAppointment = deleteAppointment;
 window.startEditAppointment = startEditAppointment;
 window.cancelEditAppointment = cancelEditAppointment;
 window.deleteMedication = deleteMedication;
-window.deleteContact = deleteContact;

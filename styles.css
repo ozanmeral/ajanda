@@ -913,51 +913,6 @@ button.calendar-day:hover {
   text-decoration: line-through rgba(90, 110, 127, 0.4);
 }
 
-/* Contacts Circle */
-.contacts-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.contact-card-btn {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.25rem;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  border-radius: 14px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.01);
-  color: #1e293b;
-  font-weight: 500;
-  font-size: 0.95rem;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
-}
-
-.contact-card-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.06);
-  border-color: rgba(59, 130, 246, 0.1);
-}
-
-.contact-phone-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-color: var(--theme-sage-soft);
-  color: var(--theme-sage);
-  transition: background-color var(--transition-fast), color var(--transition-fast);
-}
-
-.contact-card-btn:hover .contact-phone-icon {
-  background-color: var(--theme-sage);
-  color: #fff;
-}
-
 /* ==========================================================================
    Admin View Panel Styles
    ========================================================================== */
@@ -1403,6 +1358,10 @@ textarea:focus {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
+
+  .admin-container {
+    max-width: 720px;
+  }
   
   .timeline-card {
     grid-template-columns: 1fr;
@@ -1452,6 +1411,121 @@ textarea:focus {
 }
 
 @media (max-width: 600px) {
+  .app-view {
+    padding-inline: 0.75rem;
+  }
+
+  .admin-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .admin-header h2 {
+    font-size: 1.45rem;
+  }
+
+  .glass-card {
+    border-radius: 14px;
+    padding: 1rem;
+  }
+
+  .auth-card {
+    max-width: none;
+  }
+
+  .auth-help {
+    padding: 1rem;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="date"],
+  input[type="time"],
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .full-width {
+    grid-column: auto;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 0.65rem;
+  }
+
+  .form-actions .btn,
+  .account-actions .btn,
+  .auth-card .btn {
+    width: 100%;
+  }
+
+  .med-inline-add {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: stretch;
+  }
+
+  .med-inline-add input:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .active-appointments-section {
+    padding: 1rem;
+  }
+
+  .table-responsive {
+    border: none;
+    overflow: visible;
+  }
+
+  .appointments-table,
+  .appointments-table tbody,
+  .appointments-table tr,
+  .appointments-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .appointments-table {
+    background: transparent;
+  }
+
+  .appointments-table thead {
+    display: none;
+  }
+
+  .appointments-table tr {
+    margin-bottom: 0.8rem;
+    padding: 0.85rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .appointments-table td {
+    padding: 0.35rem 0;
+    border-bottom: none;
+  }
+
+  .appointments-table td:last-child {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    padding-top: 0.65rem;
+  }
+
+  .table-notes-preview {
+    max-width: none;
+  }
+
   .header-content {
     align-items: flex-start;
     gap: 1rem;

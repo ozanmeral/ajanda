@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=1.2.2">
+  <link rel="stylesheet" href="styles.css?v=1.2.3">
 </head>
 <body>
 
@@ -64,8 +64,8 @@
         </div>
       </section>
 
-      <!-- Right Column: Medication Checklist & Emergency Contacts -->
-      <aside class="dashboard-column" aria-label="Günlük Takip & İletişim">
+      <!-- Right Column: Medication Checklist -->
+      <aside class="dashboard-column" aria-label="Günlük Takip">
         
         <!-- Daily Medications checklist -->
         <div class="glass-card medication-card" hidden>
@@ -76,19 +76,6 @@
           <p class="card-subtitle text-muted">Bugün aldığınız ilaçları buradan işaretleyebilirsiniz:</p>
           
           <div id="medication-list" class="med-list" role="group" aria-label="İlaç kontrol listesi">
-            <!-- Rendered dynamically -->
-            <div class="loading-state">
-              <span class="spinner"></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Hotlines / Care Circle Contacts -->
-        <div class="glass-card contacts-card" hidden>
-          <h3>Önemli Telefonlar</h3>
-          <p class="card-subtitle text-muted">Aramak istediğiniz numaranın üzerine dokunmanız yeterlidir:</p>
-          
-          <div id="contacts-list" class="contacts-grid">
             <!-- Rendered dynamically -->
             <div class="loading-state">
               <span class="spinner"></span>
@@ -109,7 +96,7 @@
           Panele Geri Dön
         </a>
         <h2>Programı ve Takvimi Güncelle</h2>
-        <p class="text-muted">Yeni randevu ve işlemler ekleyin, ilaç listesini veya günlük notu düzenleyin.</p>
+        <p class="text-muted">Yeni randevu ve işlemler ekleyin, ilaç listesini düzenleyin.</p>
       </div>
 
       <!-- Authentication Box: Displays when Personal Access Token is missing -->
@@ -151,7 +138,8 @@
               
               <div class="input-container full-width">
                 <label for="apt-title">Randevu / İşlem Başlığı:*</label>
-                <input type="text" id="apt-title" placeholder="Örn: Doktor Kontrolü, Tahlil Çekimi" required>
+                <input type="text" id="apt-title" list="apt-title-shortcuts" placeholder="Örn: Doktor Kontrolü, Tahlil Çekimi" required>
+                <datalist id="apt-title-shortcuts"></datalist>
               </div>
 
               <div class="input-container">
@@ -184,12 +172,14 @@
 
               <div class="input-container">
                 <label for="apt-doctor">Doktor / Uzman:</label>
-                <input type="text" id="apt-doctor" placeholder="Örn: Dr. Serkan Yılmaz">
+                <input type="text" id="apt-doctor" list="apt-doctor-shortcuts" placeholder="Örn: Dr. Serkan Yılmaz">
+                <datalist id="apt-doctor-shortcuts"></datalist>
               </div>
 
               <div class="input-container full-width">
                 <label for="apt-location">Konum / Adres / Oda:</label>
-                <input type="text" id="apt-location" placeholder="Örn: Şehir Hastanesi Polikliniği, B Blok">
+                <input type="text" id="apt-location" list="apt-location-shortcuts" placeholder="Örn: Şehir Hastanesi Polikliniği, B Blok">
+                <datalist id="apt-location-shortcuts"></datalist>
               </div>
 
               <div class="input-container full-width">
@@ -206,19 +196,8 @@
             </form>
           </div>
 
-          <!-- Column 2: Edit Daily Message & Manage Current Appointments -->
+          <!-- Column 2: Manage Medicines & Account -->
           <div class="admin-column-stack">
-            
-            <!-- Daily Message Editor -->
-            <div class="glass-card message-card-editor">
-              <h3>Günün Notunu Değiştir</h3>
-              <p class="card-subtitle text-muted">Ana sayfanın en üstünde görülecek notu güncelleyin:</p>
-              
-              <form id="message-form" class="form-group">
-                <textarea id="msg-text" rows="3" placeholder="Günün notunu buraya yazın..." required></textarea>
-                <button type="submit" id="btn-save-message" class="btn btn-secondary">Notu Güncelle</button>
-              </form>
-            </div>
 
             <!-- Medication List Manager -->
             <div class="glass-card med-card-editor">
@@ -232,22 +211,6 @@
               </form>
 
               <ul id="admin-meds-list" class="admin-med-list" role="list">
-                <!-- Javascript rendered -->
-              </ul>
-            </div>
-
-            <!-- Contacts Manager -->
-            <div class="glass-card contacts-card-editor">
-              <h3>İletişim Rehberini Yönet</h3>
-              <p class="card-subtitle text-muted">Önemli telefon numaraları:</p>
-              
-              <form id="contact-add-form" class="med-inline-add">
-                <input type="text" id="contact-new-name" placeholder="Kişi / Birim Adı" required>
-                <input type="text" id="contact-new-phone" placeholder="Telefon Numarası" required>
-                <button type="submit" class="btn btn-icon" title="Kişi ekle">+</button>
-              </form>
-
-              <ul id="admin-contacts-list" class="admin-contact-list" role="list">
                 <!-- Javascript rendered -->
               </ul>
             </div>
@@ -297,6 +260,6 @@
     <span id="toast-message">İşlem yapılıyor</span>
   </div>
 
-  <script src="app.js?v=1.2.2"></script>
+  <script src="app.js?v=1.2.3"></script>
 </body>
 </html>
