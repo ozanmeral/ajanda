@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=1.2.3">
+  <link rel="stylesheet" href="styles.css?v=1.2.4">
 </head>
 <body>
 
@@ -138,8 +138,11 @@
               
               <div class="input-container full-width">
                 <label for="apt-title">Randevu / İşlem Başlığı:*</label>
-                <input type="text" id="apt-title" list="apt-title-shortcuts" placeholder="Örn: Doktor Kontrolü, Tahlil Çekimi" required>
-                <datalist id="apt-title-shortcuts"></datalist>
+                <div class="combo-field" data-combo-field="title">
+                  <input type="text" id="apt-title" placeholder="Örn: Doktor Kontrolü, Tahlil Çekimi" required autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="apt-title-options">
+                  <button type="button" class="combo-toggle" aria-label="Başlık önerilerini aç">⌄</button>
+                  <ul id="apt-title-options" class="combo-options" role="listbox" hidden></ul>
+                </div>
               </div>
 
               <div class="input-container">
@@ -172,14 +175,20 @@
 
               <div class="input-container">
                 <label for="apt-doctor">Doktor / Uzman:</label>
-                <input type="text" id="apt-doctor" list="apt-doctor-shortcuts" placeholder="Örn: Dr. Serkan Yılmaz">
-                <datalist id="apt-doctor-shortcuts"></datalist>
+                <div class="combo-field" data-combo-field="doctor">
+                  <input type="text" id="apt-doctor" placeholder="Örn: Dr. Serkan Yılmaz" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="apt-doctor-options">
+                  <button type="button" class="combo-toggle" aria-label="Doktor önerilerini aç">⌄</button>
+                  <ul id="apt-doctor-options" class="combo-options" role="listbox" hidden></ul>
+                </div>
               </div>
 
               <div class="input-container full-width">
                 <label for="apt-location">Konum / Adres / Oda:</label>
-                <input type="text" id="apt-location" list="apt-location-shortcuts" placeholder="Örn: Şehir Hastanesi Polikliniği, B Blok">
-                <datalist id="apt-location-shortcuts"></datalist>
+                <div class="combo-field" data-combo-field="location">
+                  <input type="text" id="apt-location" placeholder="Örn: Şehir Hastanesi Polikliniği, B Blok" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="apt-location-options">
+                  <button type="button" class="combo-toggle" aria-label="Konum önerilerini aç">⌄</button>
+                  <ul id="apt-location-options" class="combo-options" role="listbox" hidden></ul>
+                </div>
               </div>
 
               <div class="input-container full-width">
@@ -229,8 +238,13 @@
 
         <!-- Scrollable Active Appointments List -->
         <section class="glass-card active-appointments-section">
-          <h3>Kayıtlı Randevu Listesi</h3>
-          <p class="card-subtitle text-muted">Sistemde ekli olan randevular. Geçmiş randevuları silerek listeyi temiz tutabilirsiniz.</p>
+          <div class="admin-section-heading">
+            <div>
+              <h3>Aktif / Gelecek Randevular</h3>
+              <p class="card-subtitle text-muted">Varsayılan olarak yalnızca yaklaşan ve hâlâ aktif olan randevular görünür.</p>
+            </div>
+            <span id="admin-active-count" class="badge">0 kayıt</span>
+          </div>
           
           <div class="table-responsive">
             <table class="appointments-table">
@@ -250,6 +264,36 @@
           </div>
         </section>
 
+        <details id="past-appointments-panel" class="glass-card past-appointments-section">
+          <summary>
+            <span>Geçmiş Randevular</span>
+            <span id="admin-past-count" class="badge">0 kayıt</span>
+          </summary>
+
+          <div class="table-responsive">
+            <table class="appointments-table">
+              <thead>
+                <tr>
+                  <th>Tarih & Saat</th>
+                  <th>Kategori</th>
+                  <th>İşlem Detayları</th>
+                  <th>Uzman & Konum</th>
+                  <th>İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="admin-past-appointments-tbody">
+                <!-- Javascript rendered rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-bar" id="admin-past-pagination" hidden>
+            <button type="button" id="btn-past-prev" class="btn btn-secondary">Önceki</button>
+            <span id="admin-past-page-label" class="pagination-label">Sayfa 1 / 1</span>
+            <button type="button" id="btn-past-next" class="btn btn-secondary">Sonraki</button>
+          </div>
+        </details>
+
       </div>
     </div>
   </main>
@@ -260,6 +304,6 @@
     <span id="toast-message">İşlem yapılıyor</span>
   </div>
 
-  <script src="app.js?v=1.2.3"></script>
+  <script src="app.js?v=1.2.4"></script>
 </body>
 </html>

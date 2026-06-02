@@ -917,7 +917,7 @@ button.calendar-day:hover {
    Admin View Panel Styles
    ========================================================================== */
 .admin-container {
-  max-width: 1000px;
+  max-width: 1120px;
   margin: 0 auto;
 }
 
@@ -1056,7 +1056,7 @@ textarea:focus {
 /* Editor Grid layout */
 .admin-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 0.85fr);
   gap: 2rem;
   margin-bottom: 2.5rem;
 }
@@ -1073,8 +1073,12 @@ textarea:focus {
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1.25rem;
+}
+
+.input-container {
+  min-width: 0;
 }
 
 .full-width {
@@ -1085,6 +1089,81 @@ textarea:focus {
   display: flex;
   justify-content: flex-end;
   margin-top: 0.5rem;
+}
+
+.combo-field {
+  position: relative;
+}
+
+.combo-field input {
+  padding-right: 3rem;
+}
+
+.combo-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  width: 2.15rem;
+  height: 2.15rem;
+  border: none;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+  transform: translateY(-50%);
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.combo-toggle:hover {
+  background: #e2e8f0;
+}
+
+.combo-options {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 15rem;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0.35rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.14);
+}
+
+.combo-options button {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 0.65rem 0.7rem;
+  background: transparent;
+  color: #1e293b;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.combo-options button:hover,
+.combo-options button:focus {
+  background: #eff6ff;
+  outline: none;
+}
+
+.combo-options mark {
+  background: #dbeafe;
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 0.05rem;
+}
+
+.combo-empty {
+  padding: 0.65rem 0.7rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
 }
 
 /* Inline lists managers in Admin */
@@ -1178,6 +1257,76 @@ textarea:focus {
 /* Responsive Table */
 .active-appointments-section {
   padding: 2rem 1.5rem;
+}
+
+.past-appointments-section {
+  padding: 0;
+  margin-top: 1.25rem;
+  overflow: visible;
+}
+
+.past-appointments-section summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  font-family: var(--font-header);
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.past-appointments-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.past-appointments-section summary::before {
+  content: "▸";
+  color: var(--theme-blue);
+  transition: transform var(--transition-fast);
+}
+
+.past-appointments-section[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.past-appointments-section .table-responsive {
+  margin: 0 1.5rem 1.25rem;
+  width: calc(100% - 3rem);
+}
+
+.admin-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0 1.5rem 1.5rem;
+}
+
+.pagination-label {
+  min-width: 6.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.pagination-bar .btn {
+  padding: 0.55rem 0.9rem;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
 }
 
 .table-responsive {
@@ -1410,6 +1559,22 @@ textarea:focus {
   }
 }
 
+@media (max-width: 720px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .full-width {
+    grid-column: auto;
+  }
+
+  .admin-section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 @media (max-width: 600px) {
   .app-view {
     padding-inline: 0.75rem;
@@ -1479,6 +1644,26 @@ textarea:focus {
 
   .active-appointments-section {
     padding: 1rem;
+  }
+
+  .past-appointments-section summary {
+    padding: 1rem;
+  }
+
+  .past-appointments-section .table-responsive {
+    width: 100%;
+    margin: 0;
+  }
+
+  .pagination-bar {
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+
+  .pagination-bar .btn {
+    flex: 1;
+    padding-inline: 0.5rem;
   }
 
   .table-responsive {

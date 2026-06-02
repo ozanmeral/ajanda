@@ -53,6 +53,8 @@ let appState = {
 // Düzenleme modunda olan randevunun ID'sini tutar
 let editingAppointmentId = null;
 let appointmentCountdownTimer = null;
+let adminPastAppointmentsPage = 1;
+const ADMIN_PAST_APPOINTMENTS_PAGE_SIZE = 5;
 
 const CONFIRMATION_STATUS = {
   PENDING: "pending",
@@ -504,16 +506,61 @@ function renderAdminView() {
 
 function renderAdminAppointmentsTable() {
   const tbody = document.getElementById("admin-appointments-tbody");
+  const pastTbody = document.getElementById("admin-past-appointments-tbody");
+  const activeCountEl = document.getElementById("admin-active-count");
+  const pastCountEl = document.getElementById("admin-past-count");
+  const paginationEl = document.getElementById("admin-past-pagination");
+  const pageLabelEl = document.getElementById("admin-past-page-label");
+  const prevBtn = document.getElementById("btn-past-prev");
+  const nextBtn = document.getElementById("btn-past-next");
   
   if (!appState.appointments || appState.appointments.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Sistemde kayıtlı randevu bulunmuyor.</td></tr>`;
+    if (pastTbody) pastTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Geçmiş randevu bulunmuyor.</td></tr>`;
+    if (activeCountEl) activeCountEl.textContent = "0 kayıt";
+    if (pastCountEl) pastCountEl.textContent = "0 kayıt";
+    if (paginationEl) paginationEl.hidden = true;
     return;
   }
 
-  // Tarihe göre yeniden eskiye sıralayarak tabloda göster
-  const sorted = [...appState.appointments].sort((a, b) => b.date.localeCompare(a.date));
+  const now = new Date();
+  const appointmentsWithDates = appState.appointments.map(apt => ({
+    ...apt,
+    parsedDateTime: createAppointmentDateTime(apt.date, apt.time)
+  }));
+  const activeAppointments = appointmentsWithDates
+    .filter(apt => isAppointmentVisibleOnDashboard(apt.parsedDateTime, now))
+    .sort((a, b) => a.parsedDateTime - b.parsedDateTime);
+  const pastAppointments = appointmentsWithDates
+    .filter(apt => !isAppointmentVisibleOnDashboard(apt.parsedDateTime, now))
+    .sort((a, b) => b.parsedDateTime - a.parsedDateTime);
 
-  tbody.innerHTML = sorted.map(apt => {
+  tbody.innerHTML = activeAppointments.length
+    ? renderAdminAppointmentRows(activeAppointments)
+    : `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Aktif veya yaklaşan randevu bulunmuyor.</td></tr>`;
+
+  if (activeCountEl) activeCountEl.textContent = `${activeAppointments.length} kayıt`;
+  if (pastCountEl) pastCountEl.textContent = `${pastAppointments.length} kayıt`;
+
+  const totalPastPages = Math.max(1, Math.ceil(pastAppointments.length / ADMIN_PAST_APPOINTMENTS_PAGE_SIZE));
+  adminPastAppointmentsPage = Math.min(Math.max(1, adminPastAppointmentsPage), totalPastPages);
+  const startIndex = (adminPastAppointmentsPage - 1) * ADMIN_PAST_APPOINTMENTS_PAGE_SIZE;
+  const visiblePastAppointments = pastAppointments.slice(startIndex, startIndex + ADMIN_PAST_APPOINTMENTS_PAGE_SIZE);
+
+  if (pastTbody) {
+    pastTbody.innerHTML = visiblePastAppointments.length
+      ? renderAdminAppointmentRows(visiblePastAppointments)
+      : `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Geçmiş randevu bulunmuyor.</td></tr>`;
+  }
+
+  if (paginationEl) paginationEl.hidden = pastAppointments.length <= ADMIN_PAST_APPOINTMENTS_PAGE_SIZE;
+  if (pageLabelEl) pageLabelEl.textContent = `Sayfa ${adminPastAppointmentsPage} / ${totalPastPages}`;
+  if (prevBtn) prevBtn.disabled = adminPastAppointmentsPage <= 1;
+  if (nextBtn) nextBtn.disabled = adminPastAppointmentsPage >= totalPastPages;
+}
+
+function renderAdminAppointmentRows(appointments) {
+  return appointments.map(apt => {
     let icon = "🩺";
     let catText = "Randevu";
     if (apt.category === "treatment") { icon = "🧪"; catText = "Uygulama"; }
@@ -573,9 +620,9 @@ function renderAdminMedsList() {
 }
 
 function renderAppointmentShortcuts() {
-  fillDatalist("apt-title-shortcuts", getUniqueAppointmentValues("title"));
-  fillDatalist("apt-doctor-shortcuts", getUniqueAppointmentValues("doctor"));
-  fillDatalist("apt-location-shortcuts", getUniqueAppointmentValues("location"));
+  renderComboOptions(document.querySelector('[data-combo-field="title"]'));
+  renderComboOptions(document.querySelector('[data-combo-field="doctor"]'));
+  renderComboOptions(document.querySelector('[data-combo-field="location"]'));
 }
 
 function getUniqueAppointmentValues(fieldName) {
@@ -585,13 +632,89 @@ function getUniqueAppointmentValues(fieldName) {
     .sort((a, b) => a.localeCompare(b, "tr-TR"));
 }
 
-function fillDatalist(id, values) {
-  const datalist = document.getElementById(id);
-  if (!datalist) return;
+function setupSearchableDropdowns() {
+  document.querySelectorAll("[data-combo-field]").forEach(combo => {
+    if (combo.dataset.comboReady === "true") return;
 
-  datalist.innerHTML = values
-    .map(value => `<option value="${escapeHTML(value)}"></option>`)
-    .join("");
+    const input = combo.querySelector("input");
+    const toggle = combo.querySelector(".combo-toggle");
+    if (!input || !toggle) return;
+
+    input.addEventListener("input", () => renderComboOptions(combo, true));
+    input.addEventListener("focus", () => renderComboOptions(combo, true));
+    toggle.addEventListener("click", () => {
+      const options = combo.querySelector(".combo-options");
+      const shouldOpen = options?.hidden;
+      closeComboOptions();
+      if (shouldOpen) {
+        input.focus();
+        renderComboOptions(combo, true, "");
+      }
+    });
+
+    combo.dataset.comboReady = "true";
+  });
+
+  document.addEventListener("click", event => {
+    if (!event.target.closest("[data-combo-field]")) {
+      closeComboOptions();
+    }
+  });
+}
+
+function renderComboOptions(combo, open = false, forcedQuery = null) {
+  if (!combo) return;
+
+  const input = combo.querySelector("input");
+  const optionsEl = combo.querySelector(".combo-options");
+  if (!input || !optionsEl) return;
+
+  const values = getUniqueAppointmentValues(combo.dataset.comboField);
+  const query = forcedQuery !== null ? forcedQuery : input.value.trim();
+  const normalizedQuery = query.toLocaleLowerCase("tr-TR");
+  const filteredValues = values
+    .filter(value => !normalizedQuery || value.toLocaleLowerCase("tr-TR").includes(normalizedQuery))
+    .slice(0, 8);
+
+  optionsEl.innerHTML = filteredValues.length
+    ? filteredValues.map(value => `
+        <li role="option">
+          <button type="button" data-combo-value="${escapeHTML(value)}">${highlightMatch(value, query)}</button>
+        </li>
+      `).join("")
+    : `<li class="combo-empty">Eşleşen kayıt yok</li>`;
+
+  optionsEl.hidden = !open;
+  input.setAttribute("aria-expanded", String(!optionsEl.hidden));
+
+  optionsEl.querySelectorAll("[data-combo-value]").forEach(button => {
+    button.addEventListener("click", () => {
+      input.value = button.getAttribute("data-combo-value") || "";
+      optionsEl.hidden = true;
+      input.setAttribute("aria-expanded", "false");
+      input.focus();
+    });
+  });
+}
+
+function closeComboOptions() {
+  document.querySelectorAll(".combo-options").forEach(options => {
+    options.hidden = true;
+    const input = options.closest("[data-combo-field]")?.querySelector("input");
+    if (input) input.setAttribute("aria-expanded", "false");
+  });
+}
+
+function highlightMatch(value, query) {
+  if (!query) return escapeHTML(value);
+
+  const index = value.toLocaleLowerCase("tr-TR").indexOf(query.toLocaleLowerCase("tr-TR"));
+  if (index < 0) return escapeHTML(value);
+
+  const before = value.slice(0, index);
+  const match = value.slice(index, index + query.length);
+  const after = value.slice(index + query.length);
+  return `${escapeHTML(before)}<mark>${escapeHTML(match)}</mark>${escapeHTML(after)}`;
 }
 
 // --- GitHub REST API Git Eşitleme İşlemleri ---
@@ -836,6 +959,8 @@ async function deleteMedication(id) {
 
 // --- Olay Dinleyicileri Kurulumu ---
 function setupEventListeners() {
+  setupSearchableDropdowns();
+
   // Giriş/PAT Kaydetme Formu
   const authForm = document.getElementById("auth-form");
   if (authForm) {
@@ -888,6 +1013,22 @@ function setupEventListeners() {
   const medForm = document.getElementById("med-add-form");
   if (medForm) {
     medForm.addEventListener("submit", handleAddMedication);
+  }
+
+  const pastPrevBtn = document.getElementById("btn-past-prev");
+  if (pastPrevBtn) {
+    pastPrevBtn.addEventListener("click", () => {
+      adminPastAppointmentsPage = Math.max(1, adminPastAppointmentsPage - 1);
+      renderAdminAppointmentsTable();
+    });
+  }
+
+  const pastNextBtn = document.getElementById("btn-past-next");
+  if (pastNextBtn) {
+    pastNextBtn.addEventListener("click", () => {
+      adminPastAppointmentsPage += 1;
+      renderAdminAppointmentsTable();
+    });
   }
 
   // İlaç işaretlerini manuel sıfırlama butonu
